@@ -195,7 +195,7 @@ Start-Sleep -Milliseconds 600
 
 Slow-Type "  Breathe. Your computer is completely fine." "Green" 30
 Write-Host ""
-Start-Sleep -Milliseconds 500)
+Start-Sleep -Milliseconds 500
 
 Slow-Type "  Nothing above was real. No data was touched." "White" 28
 Slow-Type "  No files moved. No connections made. No harm done." "White" 28
