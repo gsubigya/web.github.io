@@ -1,8 +1,3 @@
-# ============================================================
-# HARMLESS CYBERSECURITY AWARENESS SCRIPT - FAST VERSION
-# Does ZERO damage. For education only.
-# ============================================================
-
 $Host.UI.RawUI.WindowTitle = "!!! SECURITY BREACH DETECTED !!!"
 $Host.UI.RawUI.BackgroundColor = "Black"
 $Host.UI.RawUI.ForegroundColor = "Red"
@@ -96,7 +91,7 @@ $threads = @(
 foreach ($t in $threads) {
     Write-Host "    SPAWNED: " -NoNewline -ForegroundColor DarkGray
     Write-Host $t -ForegroundColor Red
-    Start-Sleep -Milliseconds 180
+    Start-Sleep -Milliseconds 100
 }
 
 Write-Host ""
