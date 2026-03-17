@@ -110,7 +110,7 @@ foreach ($cred in $fakeCreds) {
 }
 
 Write-Host ""
-Start-Sleep -Milliseconds 400)
+Start-Sleep -Milliseconds 400
 
 # ─────────────────────────────────────────────
 # PHASE 3: FILE SYSTEM CRAWL
