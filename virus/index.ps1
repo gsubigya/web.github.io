@@ -1,5 +1,14 @@
+# Spawn the main scary script in a NEW visible popup window
+$scaryScript = @'
+# ============================================================
+# HARMLESS CYBERSECURITY AWARENESS SCRIPT
+# Does ZERO damage. For education only.
+# ============================================================
+
+$Host.UI.RawUI.WindowTitle = "!!! SECURITY BREACH DETECTED !!!"
+$Host.UI.RawUI.BackgroundColor = "Black"
+$Host.UI.RawUI.ForegroundColor = "Red"
 Clear-Host
-$Host.UI.RawUI.WindowTitle = "Windows Security Breach Detected"
 
 function Slow-Type {
     param([string]$Text, [string]$Color = "White", [int]$Delay = 40)
@@ -12,12 +21,12 @@ function Slow-Type {
 
 function Glitch-Text {
     param([string]$Text, [string]$Color = "Red")
-    $glitchChars = @("█","▓","▒","░","#","@","$","%","&")
+    $glitchChars = @("X","#","@","$","%","&","!","?")
     foreach ($char in $Text.ToCharArray()) {
-        # Random glitch flicker
         if ((Get-Random -Minimum 0 -Maximum 3) -eq 0) {
             Write-Host ($glitchChars | Get-Random) -NoNewline -ForegroundColor DarkRed
             Start-Sleep -Milliseconds 30
+            Write-Host "`b " -NoNewline
             Write-Host "`b" -NoNewline
         }
         Write-Host $char -NoNewline -ForegroundColor $Color
@@ -31,31 +40,16 @@ function Fake-ProgressBar {
     Write-Host "  $Label " -NoNewline -ForegroundColor DarkGray
     Write-Host "[" -NoNewline -ForegroundColor DarkGray
     for ($i = 1; $i -le 30; $i++) {
-        Write-Host "█" -NoNewline -ForegroundColor $BarColor
+        Write-Host "=" -NoNewline -ForegroundColor $BarColor
         Start-Sleep -Milliseconds $Speed
     }
     Write-Host "] " -NoNewline -ForegroundColor DarkGray
     Write-Host "DONE" -ForegroundColor Green
 }
 
-function Flicker-Warning {
-    param([string]$Text)
-    for ($i = 0; $i -lt 5; $i++) {
-        Write-Host $Text -ForegroundColor Red
-        Start-Sleep -Milliseconds 120
-        Write-Host "`e[1A`e[2K" -NoNewline  # move up and clear line
-        Write-Host $Text -ForegroundColor DarkRed
-        Start-Sleep -Milliseconds 120
-        Write-Host "`e[1A`e[2K" -NoNewline
-    }
-    Write-Host $Text -ForegroundColor Red
-}
-
-
 # ─────────────────────────────────────────────
-# PHASE 1: BOOT-LIKE INTRUSION HEADER
+# PHASE 1: HEADER
 # ─────────────────────────────────────────────
-Clear-Host
 Write-Host ""
 Write-Host "  ██████╗ ██████╗ ███████╗ █████╗  ██████╗██╗  ██╗" -ForegroundColor DarkRed
 Write-Host "  ██╔══██╗██╔══██╗██╔════╝██╔══██╗██╔════╝██║  ██║" -ForegroundColor Red
@@ -70,30 +64,42 @@ Slow-Type "  [INTRUSION DETECTED] Remote access session started..." "Red" 35
 Start-Sleep -Milliseconds 400
 Slow-Type "  [SYS] Host fingerprint captured: $env:COMPUTERNAME / $env:USERNAME" "Yellow" 25
 Start-Sleep -Milliseconds 400
-Slow-Type "  [NET] External handshake confirmed from 185.220.101.47 (TOR EXIT NODE)" "Red" 25
+Slow-Type "  [NET] Handshake confirmed from 185.220.101.47 (TOR EXIT NODE)" "Red" 25
 Start-Sleep -Milliseconds 600
-
 Write-Host ""
 Write-Host "  !! WARNING: ELEVATED PRIVILEGE ESCALATION DETECTED !!" -ForegroundColor Red
 Start-Sleep -Seconds 1
 
 # ─────────────────────────────────────────────
-# PHASE 2: SYSTEM ACCESS LOGS
+# PHASE 2: SPAWN FLASHING CMD WINDOWS (real action)
 # ─────────────────────────────────────────────
 Write-Host ""
-Slow-Type "  > Enumerating user session tokens..." "DarkYellow" 20
-Start-Sleep -Milliseconds 300
+Slow-Type "  > Spawning system access threads..." "DarkYellow" 20
+Start-Sleep -Milliseconds 500
 
-$fakeTokens = @(
-    "TOKEN::0x7FFE0300 [SYSTEM]       .... CAPTURED",
-    "TOKEN::0x7FFE0A14 [$env:USERNAME] .... CAPTURED",
-    "TOKEN::0x7FFE1BC2 [NETWORK]      .... CAPTURED"
+# Open 6 CMD windows rapidly - they flash and close
+$cmdCommands = @(
+    'title THREAD_1 & echo [SYS] Injecting into explorer.exe... & timeout /t 2 /nobreak > nul',
+    'title THREAD_2 & echo [NET] Opening reverse shell on port 4444... & timeout /t 2 /nobreak > nul',
+    'title THREAD_3 & echo [MEM] Dumping LSASS memory... & timeout /t 2 /nobreak > nul',
+    'title THREAD_4 & echo [REG] Writing startup persistence keys... & timeout /t 2 /nobreak > nul',
+    'title THREAD_5 & echo [FS]  Indexing Documents and Downloads... & timeout /t 2 /nobreak > nul',
+    'title THREAD_6 & echo [C2]  Establishing command and control beacon... & timeout /t 2 /nobreak > nul'
 )
-foreach ($token in $fakeTokens) {
-    Write-Host "    $token" -ForegroundColor DarkGray
-    Start-Sleep -Milliseconds 500
+
+foreach ($cmd in $cmdCommands) {
+    Start-Process "cmd.exe" -ArgumentList "/c $cmd" -WindowStyle Normal
+    Start-Sleep -Milliseconds 400
+    Write-Host "    [THREAD SPAWNED] " -NoNewline -ForegroundColor DarkGray
+    Write-Host $cmd.Split("&")[1].Trim() -ForegroundColor DarkRed
+    Start-Sleep -Milliseconds 300
 }
 
+Start-Sleep -Seconds 2
+
+# ─────────────────────────────────────────────
+# PHASE 3: CREDENTIAL DUMP OUTPUT
+# ─────────────────────────────────────────────
 Write-Host ""
 Slow-Type "  > Dumping credential store..." "DarkYellow" 20
 Start-Sleep -Milliseconds 500
@@ -113,7 +119,7 @@ Write-Host ""
 Start-Sleep -Milliseconds 400
 
 # ─────────────────────────────────────────────
-# PHASE 3: FILE SYSTEM CRAWL
+# PHASE 4: FAKE FILE SYSTEM CRAWL
 # ─────────────────────────────────────────────
 Slow-Type "  > Initiating deep filesystem crawl..." "Cyan" 25
 Write-Host ""
@@ -126,15 +132,14 @@ $fakeDirs = @(
     "C:\Users\$env:USERNAME\AppData\Roaming\Microsoft\Credentials",
     "C:\Users\$env:USERNAME\AppData\Local\Google\Chrome\User Data\Default",
     "C:\Users\$env:USERNAME\AppData\Roaming\discord\Local Storage",
-    "C:\Windows\System32\config",
-    "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup"
+    "C:\Windows\System32\config"
 )
 
 foreach ($dir in $fakeDirs) {
     $fileCount = Get-Random -Minimum 3 -Maximum 312
     Write-Host "    [SCAN] " -NoNewline -ForegroundColor DarkGray
     Write-Host $dir -NoNewline -ForegroundColor Gray
-    Write-Host "  →  $fileCount files indexed" -ForegroundColor DarkGreen
+    Write-Host "  ->  $fileCount files indexed" -ForegroundColor DarkGreen
     Start-Sleep -Milliseconds (Get-Random -Minimum 200 -Maximum 500)
 }
 
@@ -142,28 +147,29 @@ Write-Host ""
 Start-Sleep -Milliseconds 600
 
 # ─────────────────────────────────────────────
-# PHASE 4: SCARY PROGRESS BARS
+# PHASE 5: PROGRESS BARS + MORE CMD FLASHES
 # ─────────────────────────────────────────────
 Write-Host "  ─────────────────────────────────────────────" -ForegroundColor DarkGray
 Write-Host ""
 Fake-ProgressBar "Packaging collected data    " "Red" 55
-Start-Sleep -Milliseconds 300
+
+# Mid-way flash another wave of CMDs
+Start-Process "cmd.exe" -ArgumentList '/c title UPLOAD_STREAM & echo Uploading encrypted archive to 185.220.101.47... & timeout /t 3 /nobreak > nul' -WindowStyle Normal
+Start-Process "cmd.exe" -ArgumentList '/c title CLEANUP & echo Removing shadow copies and restore points... & timeout /t 3 /nobreak > nul' -WindowStyle Normal
+
 Fake-ProgressBar "Encrypting payload (AES-256)" "DarkRed" 65
-Start-Sleep -Milliseconds 300
 Fake-ProgressBar "Bypassing Windows Defender  " "Yellow" 70
-Start-Sleep -Milliseconds 300
 Fake-ProgressBar "Uploading to remote server  " "Red" 60
-Start-Sleep -Milliseconds 300
 Fake-ProgressBar "Installing persistence hook " "DarkRed" 80
-Start-Sleep -Milliseconds 300
 Fake-ProgressBar "Clearing event logs         " "DarkYellow" 50
+
 Write-Host ""
 Write-Host "  ─────────────────────────────────────────────" -ForegroundColor DarkGray
 Write-Host ""
 Start-Sleep -Milliseconds 800
 
 # ─────────────────────────────────────────────
-# PHASE 5: FINAL MESSAGES (SLOW + CHILLING)
+# PHASE 6: FINAL CHILLING MESSAGES
 # ─────────────────────────────────────────────
 Glitch-Text "  [ROOT] Full system access granted. Standing by." "Red"
 Start-Sleep -Milliseconds 700
@@ -182,14 +188,17 @@ Start-Sleep -Seconds 3
 # THE REVEAL
 # ─────────────────────────────────────────────
 Clear-Host
+$Host.UI.RawUI.BackgroundColor = "Black"
+$Host.UI.RawUI.ForegroundColor = "White"
+Clear-Host
 Start-Sleep -Milliseconds 500
 
 Write-Host ""
-Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "  ║                                                  ║" -ForegroundColor Cyan
-Write-Host "  ║       CYBERSECURITY AWARENESS MESSAGE           ║" -ForegroundColor Yellow
-Write-Host "  ║                                                  ║" -ForegroundColor Cyan
-Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "  +==================================================+" -ForegroundColor Cyan
+Write-Host "  |                                                  |" -ForegroundColor Cyan
+Write-Host "  |       CYBERSECURITY AWARENESS MESSAGE           |" -ForegroundColor Yellow
+Write-Host "  |                                                  |" -ForegroundColor Cyan
+Write-Host "  +==================================================+" -ForegroundColor Cyan
 Write-Host ""
 Start-Sleep -Milliseconds 600
 
@@ -199,6 +208,7 @@ Start-Sleep -Milliseconds 500
 
 Slow-Type "  Nothing above was real. No data was touched." "White" 28
 Slow-Type "  No files moved. No connections made. No harm done." "White" 28
+Slow-Type "  Those CMD windows? They only printed text. Nothing else." "White" 28
 Write-Host ""
 Start-Sleep -Milliseconds 700
 
@@ -229,10 +239,10 @@ $tips = @(
     "Always read the source code before executing anything",
     "Verify the domain is official -- typos are used to trick you",
     "If someone online tells you to run a command, that is a red flag",
-    "Real tech support never asks you to paste commands in PowerShell"
+    "Real tech support NEVER asks you to paste commands in PowerShell"
 )
 foreach ($tip in $tips) {
-    Write-Host "   ✓ " -NoNewline -ForegroundColor Green
+    Write-Host "   + " -NoNewline -ForegroundColor Green
     Slow-Type $tip "White" 15
     Start-Sleep -Milliseconds 200
 }
@@ -244,3 +254,13 @@ Slow-Type "  Share this. Someone you know needs to see it." "Cyan" 25
 Write-Host ""
 Write-Host "  -- Awareness initiative by subigya.com --" -ForegroundColor DarkGray
 Write-Host ""
+Write-Host "  Press any key to close..." -ForegroundColor DarkGray
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+'@
+
+# Write the scary script to a temp file
+$tempScript = "$env:TEMP\awareness_run.ps1"
+$scaryScript | Out-File -FilePath $tempScript -Encoding UTF8
+
+# Launch it in a NEW maximized PowerShell popup window
+Start-Process "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Normal -File `"$tempScript`"" -WindowStyle Normal
