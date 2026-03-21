@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>eDhewa | Sign In</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #60bb46;
+      --green-dark: #4da535;
+      --green-light: #e8f7e4;
+      --text: #2c2c2c;
+      --muted: #888;
+      --border: #dde3e7;
+      --input-bg: #f7f9fb;
+      --white: #ffffff;
+      --shadow: 0 8px 40px rgba(0,0,0,0.13);
+      --radius: 10px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #e8ece9;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    /* Subtle background pattern */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(96,187,70,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 70%, rgba(96,187,70,0.08) 0%, transparent 55%);
+      pointer-events: none;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      width: 100%;
+      max-width: 380px;
+      padding: 36px 36px 28px;
+      position: relative;
+      animation: fadeUp 0.45s cubic-bezier(.22,.68,0,1.2) both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0)   scale(1); }
+    }
+
+    /* Close button */
+    .close-btn {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 20px;
+      line-height: 1;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .close-btn:hover { color: var(--text); background: #f0f0f0; }
+
+    /* Logo area */
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+    .logo-placeholder {
+      /* Replace this entire element with your <img> tag */
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--green);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    /* Headings */
+    .welcome {
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.4px;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    /* Form */
+    .field {
+      margin-bottom: 18px;
+    }
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 7px;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--input-bg);
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .field input::placeholder { color: #b0b8c0; }
+    .field input:focus {
+      border-color: var(--green);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(96,187,70,0.13);
+    }
+
+    /* Password toggle */
+    .toggle-pw {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 2px;
+      transition: color 0.2s;
+    }
+    .toggle-pw:hover { color: var(--green); }
+    .toggle-pw svg { display: block; }
+
+    /* Phone icon button */
+    .phone-btn {
+      position: absolute;
+      right: -50px;
+      top: 0;
+      bottom: 0;
+      width: 42px;
+      background: var(--green);
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      transition: background 0.2s;
+    }
+    .phone-btn:hover { background: var(--green-dark); }
+
+    .esewa-id-row {
+      position: relative;
+      padding-right: 0;
+    }
+
+    /* Forgot password */
+    .forgot {
+      display: block;
+      text-align: right;
+      font-size: 13px;
+      color: var(--green);
+      text-decoration: none;
+      margin-bottom: 20px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .forgot:hover { color: var(--green-dark); text-decoration: underline; }
+
+    /* Login button */
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.12s, box-shadow 0.2s;
+      box-shadow: 0 3px 12px rgba(96,187,70,0.28);
+      margin-bottom: 22px;
+    }
+    .btn-login:hover {
+      background: var(--green-dark);
+      box-shadow: 0 5px 18px rgba(96,187,70,0.38);
+    }
+    .btn-login:active { transform: scale(0.98); }
+
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1.5px solid var(--border);
+      margin-bottom: 18px;
+    }
+
+    /* Register link */
+    .register-wrap {
+      text-align: center;
+    }
+    .register-link {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--green);
+      text-decoration: none;
+      letter-spacing: 0.4px;
+      transition: color 0.2s;
+    }
+    .register-link:hover { color: var(--green-dark); text-decoration: underline; }
+
+    /* Responsive: on larger screens, show the phone button */
+    @media (min-width: 500px) {
+      .card { padding: 40px 40px 30px; }
+    }
+    @media (max-width: 400px) {
+      .card { padding: 28px 20px 22px; }
+      .welcome { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Close -->
+  <button class="close-btn" aria-label="Close">&#10005;</button>
+
+  <!-- Logo: replace this div with your <img src="esewa-logo.png" alt="eSewa" /> -->
+  <div class="logo-wrap">
+    <div class="logo-placeholder">
+      <div class="logo-icon">X</div>
+      <span><em>e</em> Dhewa<sup style="font-size:10px;color:var(--muted);font-style:normal;">™</sup></span>
+    </div>
+  </div>
+
+  <h1 class="welcome">Welcome,</h1>
+  <p class="subtitle">Sign in to continue</p>
+
+  <!-- eSewa ID -->
+  <div class="field">
+    <label for="esewa-id">eDhewa ID</label>
+    <div class="input-wrap esewa-id-row">
+      <input type="text" id="esewa-id" placeholder="Email / Mobile No." autocomplete="username"/>
+    </div>
+  </div>
+
+  <!-- Password -->
+  <div class="field">
+    <label for="password">Password</label>
+    <div class="input-wrap">
+      <input type="password" id="password" placeholder="Type password" autocomplete="current-password"/>
+      <button class="toggle-pw" type="button" aria-label="Toggle password visibility" onclick="togglePw()">
+        <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Forgot -->
+  <a href="#" class="forgot">Forgot Password ?</a>
+
+  <!-- Login -->
+  <button class="btn-login" type="button">Login</button>
+
+  <hr class="divider"/>
+
+  <!-- Register -->
+  <div class="register-wrap">
+    <a href="#" class="register-link">REGISTER FOR FREE</a>
+  </div>
+
+</div>
+
+<script>
+  function togglePw() {
+    const input = document.getElementById('password');
+    const icon  = document.getElementById('eye-icon');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.innerHTML = `
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>`;
+    } else {
+      input.type = 'password';
+      icon.innerHTML = `
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>`;
+    }
+  }
+</script>
+
+</body>
+</html>
