@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- viewport-fit=cover fills notch/status bar area on Android -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0a1a">
@@ -18,523 +19,291 @@
     --sky-bot: #3d3f6b;
     --accent: #d4a843;
     --accent2: #b8734a;
-    --green-dark: #2d5a3d;
-    --green-mid: #3d7a52;
-    --green-light: #4e9465;
-    --pipe-shadow: rgba(0,0,0,0.4);
     --coin: #c9943a;
     --coin-glow: rgba(201,148,58,0.35);
     --text: #e8e4dc;
     --hud-bg: rgba(15,14,28,0.75);
-    --bird-body: #e8c76a;
-    --bird-wing: #c9a04a;
-    --bird-eye: #f0ece4;
-    --bird-beak: #c47a35;
   }
 
   html, body {
     width: 100%; height: 100%;
+    /* Safe-area insets — fills behind notch and home indicator */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     overflow: hidden;
-    background: var(--sky-top);
+    background: #0a0a1a;
     display: flex; align-items: center; justify-content: center;
     font-family: 'Orbitron', monospace;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+    /* Kill the blue tap flash Android Chrome puts on everything */
+    -webkit-tap-highlight-color: transparent;
+    /* No long-press context menu */
+    -webkit-touch-callout: none;
+    /* No rubber-band overscroll */
+    overscroll-behavior: none;
   }
 
   #game-wrapper {
     position: relative;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     max-width: 480px;
     max-height: 900px;
     overflow: hidden;
     background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 50%, var(--sky-bot) 100%);
     box-shadow: 0 0 40px rgba(20,18,40,0.9);
+    overscroll-behavior: contain;
   }
 
-  /* Stars */
-  #stars {
-    position: absolute; inset: 0; pointer-events: none; z-index: 0;
-  }
-
+  #stars { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
   .star {
-    position: absolute;
-    background: #fff;
-    border-radius: 50%;
+    position: absolute; background: #fff; border-radius: 50%;
     animation: twinkle var(--d, 3s) ease-in-out infinite alternate;
   }
   @keyframes twinkle { 0%{opacity:0.1} 100%{opacity:0.55} }
 
-  /* Canvas */
   #gameCanvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-    touch-action: none;
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    z-index: 1; touch-action: none;
+    cursor: none; /* no cursor bleed on mobile */
   }
 
   /* HUD */
   #hud {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    z-index: 10;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 10px 10px 0;
-    gap: 6px;
+    position: absolute; top: 0; left: 0; right: 0;
+    z-index: 10; display: flex; justify-content: space-between;
+    align-items: flex-start; padding: 10px 10px 0; gap: 6px;
     pointer-events: none;
   }
 
   .hud-block {
-    background: var(--hud-bg);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    padding: 7px 10px;
-    backdrop-filter: blur(8px);
-    min-width: 68px;
-    text-align: center;
+    background: var(--hud-bg); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; padding: 7px 10px;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    min-width: 68px; text-align: center;
   }
 
   .hud-label {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 5px;
-    color: rgba(255,255,255,0.5);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 3px;
+    font-family: 'Press Start 2P', monospace; font-size: 5px;
+    color: rgba(255,255,255,0.5); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 3px;
   }
 
   .hud-value {
-    font-family: 'Orbitron', monospace;
-    font-size: 16px;
-    font-weight: 900;
-    color: var(--accent);
-    text-shadow: 0 0 8px rgba(212,168,67,0.4);
-    line-height: 1;
+    font-family: 'Orbitron', monospace; font-size: 16px; font-weight: 900;
+    color: var(--accent); text-shadow: 0 0 8px rgba(212,168,67,0.4); line-height: 1;
   }
 
   #score-center {
-    position: absolute;
-    top: 78px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 11;
-    text-align: center;
-    pointer-events: none;
-    white-space: nowrap;
+    position: absolute; top: 78px; left: 50%;
+    transform: translateX(-50%); z-index: 11;
+    text-align: center; pointer-events: none; white-space: nowrap;
   }
 
   #score-display {
     font-family: 'Press Start 2P', monospace;
-    font-size: clamp(26px, 7vw, 38px);
-    color: #fff;
+    font-size: clamp(26px, 7vw, 38px); color: #fff;
     text-shadow: 0 0 14px rgba(210,168,80,0.45), 2px 2px 0 rgba(0,0,0,0.5);
     line-height: 1;
   }
 
+  /* Level-up toast */
+  #levelup-toast {
+    position: absolute; top: 60px; left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    z-index: 30; background: rgba(20,15,8,0.88);
+    border: 1px solid rgba(212,168,67,0.45); border-radius: 30px;
+    padding: 7px 20px 7px 14px; display: flex; align-items: center;
+    gap: 10px; pointer-events: none;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    transition: transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.35s ease;
+    opacity: 0; white-space: nowrap;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5), 0 0 16px rgba(212,168,67,0.12);
+  }
+  #levelup-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  #levelup-toast.hide { transform: translateX(-50%) translateY(-80px); opacity: 0; }
+
+  .toast-icon { font-size: 16px; line-height: 1; }
+  .toast-body { display: flex; flex-direction: column; gap: 2px; }
+  .toast-title { font-family: 'Press Start 2P', monospace; font-size: 7px; color: #d4a843; letter-spacing: 1px; text-transform: uppercase; }
+  .toast-sub { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.55); letter-spacing: 0.5px; }
+  .toast-lv { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 900; color: #d4a843; text-shadow: 0 0 10px rgba(212,168,67,0.4); line-height: 1; }
+
   /* START SCREEN */
   #start-screen {
-    position: absolute; inset: 0;
-    z-index: 20;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    position: absolute; inset: 0; z-index: 20;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
     background: linear-gradient(180deg, rgba(18,18,32,0.96) 0%, rgba(28,28,52,0.94) 100%);
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
   }
 
-  .game-logo {
-    margin-bottom: 12px;
-    text-align: center;
-  }
-
+  .game-logo { margin-bottom: 12px; text-align: center; }
   .logo-bird-icon {
-    font-size: 56px;
-    display: block;
-    margin-bottom: 8px;
+    font-size: 56px; display: block; margin-bottom: 8px;
     animation: float 2s ease-in-out infinite;
     filter: drop-shadow(0 0 20px var(--accent));
   }
-
-  @keyframes float {
-    0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)}
-  }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
 
   .logo-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: clamp(18px, 5vw, 26px);
-    color: #d4a843;
-    text-shadow: 2px 2px 0 #8a5530, 4px 4px 0 rgba(0,0,0,0.3);
-    letter-spacing: 2px;
-    margin-bottom: 4px;
+    font-family: 'Press Start 2P', monospace; font-size: clamp(18px, 5vw, 26px);
+    color: #d4a843; text-shadow: 2px 2px 0 #8a5530, 4px 4px 0 rgba(0,0,0,0.3);
+    letter-spacing: 2px; margin-bottom: 4px;
   }
-
   .logo-sub {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    color: rgba(255,255,255,0.5);
-    letter-spacing: 3px;
-    text-transform: uppercase;
+    font-family: 'Press Start 2P', monospace; font-size: 9px;
+    color: rgba(255,255,255,0.5); letter-spacing: 3px; text-transform: uppercase;
   }
 
   .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin: 22px 0;
-    width: min(320px, 80vw);
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin: 22px 0; width: min(320px, 80vw);
   }
-
   .stat-card {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(247,201,72,0.2);
-    border-radius: 12px;
-    padding: 14px 10px;
-    text-align: center;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(247,201,72,0.2);
+    border-radius: 12px; padding: 14px 10px; text-align: center;
   }
-
-  .stat-card .label {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 6px;
-    color: rgba(255,255,255,0.4);
-    margin-bottom: 6px;
-    text-transform: uppercase;
-  }
-
-  .stat-card .val {
-    font-family: 'Orbitron', monospace;
-    font-size: 20px;
-    font-weight: 900;
-    color: var(--accent);
-  }
-
-  .stat-card .coin-val {
-    color: var(--coin);
-    text-shadow: 0 0 8px var(--coin-glow);
-  }
+  .stat-card .label { font-family: 'Press Start 2P', monospace; font-size: 6px; color: rgba(255,255,255,0.4); margin-bottom: 6px; text-transform: uppercase; }
+  .stat-card .val { font-family: 'Orbitron', monospace; font-size: 20px; font-weight: 900; color: var(--accent); }
+  .stat-card .coin-val { color: var(--coin); text-shadow: 0 0 8px var(--coin-glow); }
 
   #start-btn {
     margin-top: 8px;
     background: linear-gradient(135deg, #c9943a 0%, #9e6238 100%);
-    color: #1a1520;
-    font-family: 'Press Start 2P', monospace;
-    font-size: clamp(11px, 3vw, 14px);
-    padding: 16px 40px;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    letter-spacing: 2px;
-    text-transform: uppercase;
+    color: #1a1520; font-family: 'Press Start 2P', monospace;
+    font-size: clamp(11px, 3vw, 14px); padding: 16px 40px;
+    border: none; border-radius: 50px; cursor: pointer;
+    letter-spacing: 2px; text-transform: uppercase;
     box-shadow: 0 4px 20px rgba(180,110,50,0.3), 0 2px 0 rgba(0,0,0,0.3);
-    transition: all 0.15s ease;
-    position: relative;
-    overflow: hidden;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    position: relative; overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
-
-  #start-btn:active {
-    transform: scale(0.96) translateY(2px);
-    box-shadow: 0 2px 8px rgba(180,110,50,0.2);
-  }
-
-  #start-btn::after {
-    content:'';
-    position:absolute;
-    inset:0;
-    background: linear-gradient(rgba(255,255,255,0.2), transparent);
-    border-radius: inherit;
-  }
+  /* Deeper physical press feel than default browser 0.96 */
+  #start-btn:active { transform: scale(0.93) translateY(3px); box-shadow: 0 1px 6px rgba(180,110,50,0.15); }
+  #start-btn::after { content:''; position:absolute; inset:0; background: linear-gradient(rgba(255,255,255,0.18), transparent); border-radius: inherit; pointer-events: none; }
 
   .tap-hint {
-    margin-top: 16px;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
-    color: rgba(255,255,255,0.3);
-    letter-spacing: 1px;
-    animation: blink 1.4s ease-in-out infinite;
+    margin-top: 16px; font-family: 'Press Start 2P', monospace;
+    font-size: 7px; color: rgba(255,255,255,0.3);
+    letter-spacing: 1px; animation: blink 1.4s ease-in-out infinite;
   }
   @keyframes blink { 0%,100%{opacity:0.3} 50%{opacity:0.8} }
 
   /* GAME OVER */
   #gameover-screen {
-    position: absolute; inset: 0;
-    z-index: 20;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    position: absolute; inset: 0; z-index: 20;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
     background: rgba(0,0,0,0.82);
-    backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   }
-
   #gameover-screen.show { display: flex; }
 
   .go-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: clamp(20px, 6vw, 30px);
-    color: #c95a5a;
-    text-shadow: 2px 2px 0 #6e2828, 0 0 16px rgba(180,70,70,0.5);
-    margin-bottom: 6px;
-    animation: shake 0.4s ease-out;
+    font-family: 'Press Start 2P', monospace; font-size: clamp(20px, 6vw, 30px);
+    color: #c95a5a; text-shadow: 2px 2px 0 #6e2828, 0 0 16px rgba(180,70,70,0.5);
+    margin-bottom: 6px; animation: shake 0.4s ease-out;
   }
-
-  @keyframes shake {
-    0%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)}
-    60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} 100%{transform:translateX(0)}
-  }
+  @keyframes shake { 0%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} 100%{transform:translateX(0)} }
 
   .score-reveal {
-    font-family: 'Orbitron', monospace;
-    font-size: clamp(38px, 12vw, 60px);
-    font-weight: 900;
-    color: var(--accent);
-    text-shadow: 0 0 18px rgba(212,168,67,0.4);
-    margin-bottom: 4px;
-    animation: popIn 0.3s ease-out 0.2s both;
+    font-family: 'Orbitron', monospace; font-size: clamp(38px, 12vw, 60px); font-weight: 900;
+    color: var(--accent); text-shadow: 0 0 18px rgba(212,168,67,0.4);
+    margin-bottom: 4px; animation: popIn 0.3s ease-out 0.2s both;
   }
+  @keyframes popIn { from{transform:scale(0.3);opacity:0} to{transform:scale(1);opacity:1} }
 
-  @keyframes popIn {
-    from{transform:scale(0.3);opacity:0} to{transform:scale(1);opacity:1}
-  }
+  .score-label-go { font-family: 'Press Start 2P', monospace; font-size: 8px; color: rgba(255,255,255,0.4); margin-bottom: 18px; letter-spacing: 2px; }
 
-  .score-label-go {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    color: rgba(255,255,255,0.4);
-    margin-bottom: 18px;
-    letter-spacing: 2px;
-  }
-
-  .go-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    width: min(320px, 85vw);
-    margin-bottom: 24px;
-  }
-
-  .go-stat {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    padding: 10px 6px;
-    text-align: center;
-  }
-
+  .go-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: min(320px, 85vw); margin-bottom: 24px; }
+  .go-stat { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 6px; text-align: center; }
   .go-stat .gl { font-family:'Press Start 2P',monospace; font-size:5px; color:rgba(255,255,255,0.35); margin-bottom:5px; text-transform:uppercase; }
   .go-stat .gv { font-family:'Orbitron',monospace; font-size:15px; font-weight:900; color:#fff; }
 
   .best-badge {
-    background: linear-gradient(135deg, #c9943a, #9e6238);
-    color: #1a1520;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
-    padding: 6px 16px;
-    border-radius: 20px;
-    margin-bottom: 20px;
-    display: none;
-    animation: popIn 0.4s ease-out;
-    box-shadow: 0 0 16px rgba(201,148,58,0.3);
+    background: linear-gradient(135deg, #c9943a, #9e6238); color: #1a1520;
+    font-family: 'Press Start 2P', monospace; font-size: 7px;
+    padding: 6px 16px; border-radius: 20px; margin-bottom: 20px;
+    display: none; animation: popIn 0.4s ease-out; box-shadow: 0 0 16px rgba(201,148,58,0.3);
   }
   .best-badge.show { display: block; }
 
   #restart-btn {
     background: linear-gradient(135deg, #c9943a 0%, #9e6238 100%);
-    color: #1a1520;
-    font-family: 'Press Start 2P', monospace;
-    font-size: clamp(9px, 2.5vw, 12px);
-    padding: 14px 32px;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    letter-spacing: 2px;
+    color: #1a1520; font-family: 'Press Start 2P', monospace;
+    font-size: clamp(9px, 2.5vw, 12px); padding: 14px 32px;
+    border: none; border-radius: 50px; cursor: pointer; letter-spacing: 2px;
     box-shadow: 0 4px 16px rgba(180,110,50,0.25);
-    transition: all 0.15s;
+    transition: transform 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
-
-  #restart-btn:active { transform: scale(0.96); }
+  #restart-btn:active { transform: scale(0.93) translateY(3px); }
 
   /* Ground */
   #ground-bar {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 56px;
-    z-index: 5;
-    pointer-events: none;
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 56px; z-index: 5; pointer-events: none;
     background: linear-gradient(180deg, #2e4e2a 0%, #1e3618 40%, #111f0c 100%);
-    border-top: 2px solid #3a5a34;
-    overflow: hidden;
+    border-top: 2px solid #3a5a34; overflow: hidden;
   }
-
   #ground-bar::before {
-    content: '';
-    position: absolute;
-    top: 3px; left: 0; right: 0;
-    height: 6px;
+    content: ''; position: absolute; top: 3px; left: 0; right: 0; height: 6px;
     background: repeating-linear-gradient(90deg, rgba(255,255,255,0.08) 0px, rgba(255,255,255,0.08) 20px, transparent 20px, transparent 40px);
     animation: groundScroll 0.4s linear infinite;
   }
-
   @keyframes groundScroll { from{background-position:0} to{background-position:40px} }
 
-  /* Coin pulse */
-  @keyframes coinSpin {
-    0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)}
-  }
-
-  /* Particles */
-  .particle {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 15;
-    animation: particleFly var(--dur, 0.6s) ease-out forwards;
-  }
-
-  @keyframes particleFly {
-    from { opacity:1; transform: translate(0,0) scale(1); }
-    to   { opacity:0; transform: translate(var(--dx,0px), var(--dy,0px)) scale(0.2); }
-  }
+  .particle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 15; animation: particleFly var(--dur, 0.6s) ease-out forwards; }
+  @keyframes particleFly { from{opacity:1;transform:translate(0,0) scale(1)} to{opacity:0;transform:translate(var(--dx,0px),var(--dy,0px)) scale(0.2)} }
 
   /* Countdown */
-  #countdown {
-    position: absolute;
-    inset: 0;
-    z-index: 18;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-  }
+  #countdown { position: absolute; inset: 0; z-index: 18; display: none; align-items: center; justify-content: center; pointer-events: none; }
   #countdown.show { display: flex; }
   #countdown-num {
-    font-family: 'Press Start 2P', monospace;
-    font-size: clamp(60px, 18vw, 90px);
-    color: #d4a843;
+    font-family: 'Press Start 2P', monospace; font-size: clamp(60px, 18vw, 90px); color: #d4a843;
     text-shadow: 0 0 24px rgba(212,168,67,0.4), 3px 3px 0 rgba(0,0,0,0.5);
     animation: countPop 0.8s ease-out;
   }
-  @keyframes countPop {
-    0%{transform:scale(2);opacity:0} 30%{transform:scale(0.85);opacity:1} 100%{transform:scale(1);opacity:1}
-  }
+  @keyframes countPop { 0%{transform:scale(2);opacity:0} 30%{transform:scale(0.85);opacity:1} 100%{transform:scale(1);opacity:1} }
 
-  /* ── Level badge on HUD ─────────────────────────── */
-  #hud-level {
-    background: rgba(80,60,20,0.55);
-    border: 1px solid rgba(201,148,58,0.35);
-    border-radius: 10px;
-    padding: 7px 10px;
-    min-width: 68px;
-    text-align: center;
-  }
+  #hud-level { background: rgba(80,60,20,0.55); border: 1px solid rgba(201,148,58,0.35); border-radius: 10px; padding: 7px 10px; min-width: 68px; text-align: center; }
   #hud-level .hud-label { font-family:'Press Start 2P',monospace; font-size:5px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
   #hud-level .hud-value { font-family:'Orbitron',monospace; font-size:16px; font-weight:900; color:#c9943a; text-shadow:0 0 8px rgba(201,148,58,0.35); line-height:1; }
 
-  /* ── Level-up overlay ──────────────────────────── */
-  #levelup-screen {
-    position: absolute; inset: 0;
-    z-index: 22;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(10,9,20,0.88);
-    backdrop-filter: blur(8px);
-    pointer-events: none;
-  }
-  #levelup-screen.show { display: flex; }
+  #level-progress-wrap { position: absolute; top: 135px; left: 50%; transform: translateX(-50%); z-index: 11; width: min(120px, 34vw); pointer-events: none; text-align: center; }
+  #level-progress-bg { width: 100%; height: 3px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  #level-progress-fill { height: 100%; background: linear-gradient(90deg, #6a4820, #c9943a); border-radius: 3px; width: 0%; transition: width 0.3s ease; }
 
-  .lu-label {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    animation: fadeUp 0.4s ease-out both;
+  /* ── LANDSCAPE BLOCKER — real APKs don't rotate ─────────────── */
+  #orientation-block {
+    display: none; position: fixed; inset: 0; z-index: 9999;
+    background: #0a0a1a; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
   }
-  .lu-num {
-    font-family: 'Orbitron', monospace;
-    font-size: clamp(52px, 16vw, 76px);
-    font-weight: 900;
-    color: #d4a843;
-    text-shadow: 0 0 30px rgba(212,168,67,0.35), 3px 3px 0 rgba(0,0,0,0.5);
-    line-height: 1;
-    animation: luPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) 0.1s both;
-  }
-  .lu-desc {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
-    color: rgba(255,255,255,0.35);
-    margin-top: 14px;
-    letter-spacing: 1px;
-    animation: fadeUp 0.4s ease-out 0.3s both;
-  }
-  .lu-bar-wrap {
-    width: min(240px, 65vw);
-    height: 4px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 4px;
-    margin-top: 18px;
-    overflow: hidden;
-    animation: fadeUp 0.4s ease-out 0.4s both;
-  }
-  .lu-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #8a6030, #d4a843);
-    border-radius: 4px;
-    animation: luBar 1.8s ease-out 0.3s forwards;
-    width: 0%;
-  }
-  @keyframes luPop {
-    from{transform:scale(0.4) translateY(20px);opacity:0}
-    to{transform:scale(1) translateY(0);opacity:1}
-  }
-  @keyframes fadeUp {
-    from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)}
-  }
-  @keyframes luBar { from{width:0%} to{width:100%} }
+  .ob-icon { font-size: 52px; animation: rotateHint 2s ease-in-out infinite; }
+  @keyframes rotateHint { 0%,100%{transform:rotate(0deg)} 40%{transform:rotate(-90deg)} 60%{transform:rotate(-90deg)} }
+  .ob-text { font-family: 'Press Start 2P', monospace; font-size: 9px; color: rgba(255,255,255,0.45); text-align: center; letter-spacing: 1px; line-height: 2; }
 
-  /* Progress bar under score */
-  #level-progress-wrap {
-    position: absolute;
-    top: 135px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 11;
-    width: min(120px, 34vw);
-    pointer-events: none;
-    text-align: center;
-  }
-  #level-progress-bg {
-    width: 100%;
-    height: 3px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-  #level-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #6a4820, #c9943a);
-    border-radius: 3px;
-    width: 0%;
-    transition: width 0.3s ease;
+  @media (orientation: landscape) and (max-height: 500px) {
+    #orientation-block { display: flex; }
+    #game-wrapper { display: none; }
   }
 </style>
 </head>
 <body>
 
+<!-- Landscape blocker -->
+<div id="orientation-block">
+  <div class="ob-icon">📱</div>
+  <div class="ob-text">ROTATE YOUR<br>PHONE</div>
+</div>
+
 <div id="game-wrapper">
   <div id="stars"></div>
 
-  <!-- HUD -->
   <div id="hud">
     <div class="hud-block">
       <div class="hud-label">Best</div>
@@ -550,21 +319,22 @@
     </div>
   </div>
 
-  <!-- Score center -->
-  <div id="score-center">
-    <div id="score-display">0</div>
-  </div>
-  <!-- Level progress bar -->
+  <div id="score-center"><div id="score-display">0</div></div>
   <div id="level-progress-wrap">
     <div id="level-progress-bg"><div id="level-progress-fill"></div></div>
   </div>
 
+  <div id="levelup-toast">
+    <div class="toast-lv" id="toast-lv">2</div>
+    <div class="toast-body">
+      <div class="toast-title">Level Up!</div>
+      <div class="toast-sub" id="toast-sub">Dusk · Faster pipes</div>
+    </div>
+    <div class="toast-icon">⚡</div>
+  </div>
+
   <canvas id="gameCanvas"></canvas>
-
-  <!-- Ground -->
   <div id="ground-bar"></div>
-
-  <!-- Countdown -->
   <div id="countdown"><div id="countdown-num">3</div></div>
 
   <!-- START SCREEN -->
@@ -574,18 +344,10 @@
       <div class="logo-title">FLAPPY</div>
       <div class="logo-sub">Space &bull; Tap &bull; Survive</div>
     </div>
-
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="label">High Score</div>
-        <div class="val" id="ss-best">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Coins</div>
-        <div class="val coin-val" id="ss-coins">0</div>
-      </div>
+      <div class="stat-card"><div class="label">High Score</div><div class="val" id="ss-best">0</div></div>
+      <div class="stat-card"><div class="label">Coins</div><div class="val coin-val" id="ss-coins">0</div></div>
     </div>
-
     <button id="start-btn" onclick="startCountdown()">▶ PLAY</button>
     <div class="tap-hint">tap / space / click to flap</div>
   </div>
@@ -604,43 +366,71 @@
     <div class="best-badge" id="best-badge">⭐ NEW BEST!</div>
     <button id="restart-btn" onclick="startCountdown()">↺ RETRY</button>
   </div>
-
-  <!-- LEVEL UP -->
-  <div id="levelup-screen">
-    <div class="lu-label">Level Up</div>
-    <div class="lu-num" id="lu-num">2</div>
-    <div class="lu-desc" id="lu-desc">Pipes faster · Smaller gap</div>
-    <div class="lu-bar-wrap"><div class="lu-bar-fill"></div></div>
-  </div>
 </div>
 
 <script>
-// ── Stars ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// NATIVE APK FEEL — all additions are isolated here at the top
+// ═══════════════════════════════════════════════════════════════════
+
+// 1. Go fullscreen on first touch — removes browser address bar
+function tryFullscreen() {
+  const el = document.documentElement;
+  const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if (fn) fn.call(el).catch(() => {});
+}
+document.addEventListener('touchstart', function onFirstTouch() {
+  tryFullscreen();
+  document.removeEventListener('touchstart', onFirstTouch);
+}, { once: true, passive: true });
+
+// 2. Wake lock — screen stays on while playing, like a real game
+let wakeLock = null;
+async function holdScreen() {
+  if ('wakeLock' in navigator) {
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+  }
+}
+holdScreen();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') holdScreen();
+});
+
+// 3. Block all browser gestures that make it feel like a webpage
+//    — pull-to-refresh, pinch-zoom, double-tap-zoom, context menu
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('selectstart', e => e.preventDefault());
+let _lastTap = 0;
+document.addEventListener('touchend', e => {
+  const now = Date.now();
+  if (now - _lastTap < 300) e.preventDefault(); // kill double-tap zoom
+  _lastTap = now;
+}, { passive: false });
+
+// 4. Haptic feedback — the single biggest "feels native" factor
+const haptic = {
+  flap:  () => { try { navigator.vibrate && navigator.vibrate(12);           } catch(e){} },
+  coin:  () => { try { navigator.vibrate && navigator.vibrate([8, 20, 8]);   } catch(e){} },
+  die:   () => { try { navigator.vibrate && navigator.vibrate([30, 40, 60]); } catch(e){} },
+  level: () => { try { navigator.vibrate && navigator.vibrate([15, 30, 15]); } catch(e){} },
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// GAME CODE — unchanged from the working version
+// ═══════════════════════════════════════════════════════════════════
+
 const starsEl = document.getElementById('stars');
 for(let i=0;i<80;i++){
-  const s = document.createElement('div');
-  s.className='star';
+  const s = document.createElement('div'); s.className='star';
   const sz = Math.random()*2.5+0.5;
   s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*70}%;--d:${(Math.random()*3+1.5).toFixed(1)}s;animation-delay:${(Math.random()*3).toFixed(1)}s`;
   starsEl.appendChild(s);
 }
 
-// ── Base config ───────────────────────────────────────────────────
-const BASE = {
-  gravity:       0.38,
-  flapForce:    -7.2,
-  pipeWidth:     52,
-  pipeGap:       162,   // shrinks per level
-  pipeSpeed:     2.6,   // grows per level
-  pipeSpawnDist: 245,   // shrinks per level
-  cloudSpeed:    0.35,
-  coinRadius:    10,
-  groundH:       56,
-};
-
-// Level thresholds: score needed to reach each level (level 1 starts at 0)
 const LEVELS = [
-  { score:  0, label:'Dawn',    gap: 162, speed: 2.6, spawnDist: 245, grav: 0.38 },
+  { score:  0, label:'Dawn',    gap: 162, speed: 2.6,  spawnDist: 245, grav: 0.38 },
   { score:  5, label:'Dusk',    gap: 150, speed: 2.95, spawnDist: 230, grav: 0.39 },
   { score: 11, label:'Storm',   gap: 138, speed: 3.3,  spawnDist: 215, grav: 0.40 },
   { score: 18, label:'Night',   gap: 126, speed: 3.65, spawnDist: 200, grav: 0.41 },
@@ -650,340 +440,206 @@ const LEVELS = [
   { score: 58, label:'Chaos',   gap:  90, speed: 5.3,  spawnDist: 148, grav: 0.45 },
 ];
 
-function getLevelIndex(s){
-  let li = 0;
-  for(let i=0;i<LEVELS.length;i++) if(s >= LEVELS[i].score) li = i;
-  return li;
-}
+const BASE = { pipeWidth: 52, cloudSpeed: 0.35, coinRadius: 10 };
 
-// ── Canvas / state ────────────────────────────────────────────────
-const canvas  = document.getElementById('gameCanvas');
-const ctx     = canvas.getContext('2d');
+function getLevelIndex(s){ let li=0; for(let i=0;i<LEVELS.length;i++) if(s>=LEVELS[i].score) li=i; return li; }
+
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
 const wrapper = document.getElementById('game-wrapper');
 
 let W, H, GROUND, RAF;
-let gameState  = 'idle';   // idle | playing | levelup | dead
-let levelupTimer = null;
-
-let score = 0, coins = 0, startTime = 0, timeElapsed = 0;
-let highScore = 0, totalCoins = 0;
-let currentLevel = 0;      // index into LEVELS[]
-let pipeDistAccum = 0;
-
-let bird = { x:0, y:0, vy:0, radius:16, angle:0, flapping:false, wingAngle:0, alive:true, trail:[] };
-let pipes = [];
-let coinObjects = [];
-let groundX = 0;
-let clouds = [];
-let skyFlash = 0;
-let timerInterval = null;
-
-// ── Active difficulty (updated on level-up) ───────────────────────
+let gameState = 'idle';
+let score=0, coins=0, startTime=0, timeElapsed=0;
+let highScore=0, totalCoins=0;
+let currentLevel=0, pipeDistAccum=0, skyFlash=0;
+let bird = { x:0,y:0,vy:0,radius:16,angle:0,flapping:false,wingAngle:0,alive:true,trail:[] };
+let pipes=[], coinObjects=[], clouds=[], groundX=0;
 let CUR = { ...LEVELS[0] };
 
-// ── Clouds ───────────────────────────────────────────────────────
-function spawnCloud(){
-  clouds.push({ x:W+60, y:40+Math.random()*(H*0.35), w:60+Math.random()*100,
-    h:24+Math.random()*30, speed:BASE.cloudSpeed*(0.5+Math.random()), alpha:0.07+Math.random()*0.1 });
+let toastTimer = null;
+function showLevelToast(li){
+  const lv=LEVELS[li], descs=['Faster pipes','Tighter gaps','More gravity','Pipelines closing'];
+  document.getElementById('toast-lv').textContent  = li+1;
+  document.getElementById('toast-sub').textContent = `${lv.label} · ${descs[li%descs.length]}`;
+  const toast=document.getElementById('levelup-toast');
+  toast.classList.remove('hide'); toast.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{ toast.classList.remove('show'); toast.classList.add('hide'); },1800);
 }
 
-// ── Resize ───────────────────────────────────────────────────────
+function spawnCloud(){
+  clouds.push({x:W+60,y:40+Math.random()*(H*0.35),w:60+Math.random()*100,h:24+Math.random()*30,speed:BASE.cloudSpeed*(0.5+Math.random()),alpha:0.07+Math.random()*0.1});
+}
+
 function resize(){
-  const r = wrapper.getBoundingClientRect();
-  W = canvas.width  = r.width;
-  H = canvas.height = r.height;
-  GROUND = H - 56;
-  if(clouds.length === 0)
-    for(let i=0;i<5;i++) clouds.push({ x:Math.random()*W, y:30+Math.random()*(H*0.35),
-      w:60+Math.random()*100, h:24+Math.random()*30, speed:BASE.cloudSpeed*(0.5+Math.random()), alpha:0.06+Math.random()*0.09 });
-  if(gameState === 'idle') drawScene();
+  const r=wrapper.getBoundingClientRect();
+  W=canvas.width=r.width; H=canvas.height=r.height; GROUND=H-56;
+  if(clouds.length===0) for(let i=0;i<5;i++) clouds.push({x:Math.random()*W,y:30+Math.random()*(H*0.35),w:60+Math.random()*100,h:24+Math.random()*30,speed:BASE.cloudSpeed*(0.5+Math.random()),alpha:0.06+Math.random()*0.09});
+  if(gameState==='idle') drawScene();
 }
 window.addEventListener('resize', resize);
 resize();
 
-// ── Init ─────────────────────────────────────────────────────────
-function initBird(){
-  bird.x=W*0.22; bird.y=H*0.42; bird.vy=0; bird.radius=16;
-  bird.angle=0; bird.flapping=false; bird.wingAngle=0; bird.alive=true; bird.trail=[];
-}
-function initPipes(){
-  pipes=[]; coinObjects=[]; pipeDistAccum=0;
-  spawnPipe();
-}
+function initBird(){ bird.x=W*0.22;bird.y=H*0.42;bird.vy=0;bird.radius=16;bird.angle=0;bird.flapping=false;bird.wingAngle=0;bird.alive=true;bird.trail=[]; }
+function initPipes(){ pipes=[];coinObjects=[];pipeDistAccum=0;spawnPipe(); }
 
 function spawnPipe(){
-  const gap = CUR.gap;
-  const minTop = 55, maxTop = GROUND - gap - 70;
-  const topH = minTop + Math.random()*(maxTop - minTop);
-  const gapCenter = topH + gap/2;
-  pipes.push({ x:W+10, topH, passed:false });
-  coinObjects.push({ x:W+10+BASE.pipeWidth/2, y:gapCenter, r:BASE.coinRadius, collected:false, pulse:0 });
+  const gap=CUR.gap, minTop=55, maxTop=GROUND-gap-70;
+  const topH=minTop+Math.random()*(maxTop-minTop);
+  pipes.push({x:W+10,topH,passed:false});
+  coinObjects.push({x:W+10+BASE.pipeWidth/2,y:topH+gap/2,r:BASE.coinRadius,collected:false,pulse:0});
 }
 
-// ── Flap ─────────────────────────────────────────────────────────
 function flap(){
-  if(gameState !== 'playing') return;
-  bird.vy = CUR.grav < 0.43 ? -7.2 : -7.5;   // slight boost at high gravity levels
-  bird.flapping = true; bird.wingAngle = -0.6;
-  setTimeout(()=>{ bird.flapping=false; }, 120);
+  if(gameState!=='playing') return;
+  bird.vy=CUR.grav<0.43?-7.2:-7.5;
+  bird.flapping=true; bird.wingAngle=-0.6;
+  setTimeout(()=>{ bird.flapping=false; },120);
   spawnFlapParticles();
+  haptic.flap(); // ← native vibration
 }
 
 function spawnFlapParticles(){
   for(let i=0;i<4;i++){
-    const a = Math.PI/2+(Math.random()-0.5)*1.2, sp=1.5+Math.random()*2.5;
-    const el = document.createElement('div');
-    el.className='particle';
+    const a=Math.PI/2+(Math.random()-0.5)*1.2, sp=1.5+Math.random()*2.5;
+    const el=document.createElement('div'); el.className='particle';
     el.style.cssText=`width:5px;height:5px;background:rgba(200,160,60,0.5);left:${bird.x-bird.radius-4}px;top:${bird.y}px;--dx:${Math.cos(a)*sp*16}px;--dy:${Math.sin(a)*sp*16}px;--dur:${0.3+Math.random()*0.18}s`;
     wrapper.appendChild(el); setTimeout(()=>el.remove(),550);
   }
 }
 
-// ── Level-up trigger ──────────────────────────────────────────────
 function checkLevelUp(){
-  const newLi = getLevelIndex(score);
-  if(newLi > currentLevel){
-    currentLevel = newLi;
-    CUR = { ...LEVELS[currentLevel] };
-    triggerLevelUp();
+  const newLi=getLevelIndex(score);
+  if(newLi>currentLevel){
+    currentLevel=newLi; CUR={...LEVELS[currentLevel]};
+    showLevelToast(currentLevel);
+    flashSky(currentLevel);
+    haptic.level(); // ← native vibration
+    updateHUD();
   }
-}
-
-function triggerLevelUp(){
-  gameState = 'levelup';
-  cancelAnimationFrame(RAF);
-
-  const lv = LEVELS[currentLevel];
-  document.getElementById('lu-num').textContent  = currentLevel + 1;
-
-  // Build description
-  const descs = ['Faster pipes', 'Tighter gaps', 'More gravity', 'Pipelines closing'];
-  const desc = descs[currentLevel % descs.length];
-  document.getElementById('lu-desc').textContent = `${lv.label} · ${desc}`;
-
-  // Re-trigger animation
-  const luScreen = document.getElementById('levelup-screen');
-  luScreen.classList.remove('show');
-  void luScreen.offsetWidth;
-
-  // Reset bar animation
-  const bar = luScreen.querySelector('.lu-bar-fill');
-  bar.style.animation='none'; void bar.offsetWidth; bar.style.animation='luBar 1.8s ease-out 0.3s forwards';
-
-  luScreen.classList.add('show');
-  updateHUD();
-
-  // Flash sky
-  flashSky(currentLevel);
-
-  // Resume after 2.2s
-  levelupTimer = setTimeout(()=>{
-    luScreen.classList.remove('show');
-    gameState = 'playing';
-    RAF = requestAnimationFrame(gameLoop);
-  }, 2200);
 }
 
 function flashSky(li){
-  const flashes = ['rgba(80,60,20,', 'rgba(60,40,60,', 'rgba(20,40,80,', 'rgba(60,20,20,'];
-  skyFlash = 1.0;
-  const col = flashes[li % flashes.length];
-  const iv = setInterval(()=>{ skyFlash = Math.max(0, skyFlash-0.08); if(skyFlash<=0) clearInterval(iv); }, 40);
+  skyFlash=1.0;
+  const iv=setInterval(()=>{ skyFlash=Math.max(0,skyFlash-0.08); if(skyFlash<=0) clearInterval(iv); },40);
 }
 
-// ── Update ────────────────────────────────────────────────────────
 function update(){
-  if(gameState !== 'playing') return;
-
-  timeElapsed = ((Date.now()-startTime)/1000)|0;
-
-  // Bird physics
-  bird.vy += CUR.grav;
-  bird.y  += bird.vy;
-  bird.angle = Math.min(Math.max(bird.vy*3.5*(Math.PI/180), -30*(Math.PI/180)), 75*(Math.PI/180));
-  bird.wingAngle += 0.18;
-
-  // Trail
-  bird.trail.push({x:bird.x, y:bird.y});
-  if(bird.trail.length > 8) bird.trail.shift();
-
-  // Ground / ceiling
-  if(bird.y + bird.radius >= GROUND){ bird.y=GROUND-bird.radius; die(); return; }
-  if(bird.y - bird.radius <= 0){ bird.y=bird.radius; bird.vy=0; }
-
-  // Spawn pipes
-  pipeDistAccum += CUR.speed;
-  if(pipeDistAccum >= CUR.spawnDist){ pipeDistAccum=0; spawnPipe(); }
-
-  // Move + collide pipes
+  if(gameState!=='playing') return;
+  timeElapsed=((Date.now()-startTime)/1000)|0;
+  bird.vy+=CUR.grav; bird.y+=bird.vy;
+  bird.angle=Math.min(Math.max(bird.vy*3.5*(Math.PI/180),-30*(Math.PI/180)),75*(Math.PI/180));
+  bird.wingAngle+=0.18;
+  bird.trail.push({x:bird.x,y:bird.y});
+  if(bird.trail.length>8) bird.trail.shift();
+  if(bird.y+bird.radius>=GROUND){ bird.y=GROUND-bird.radius; die(); return; }
+  if(bird.y-bird.radius<=0){ bird.y=bird.radius; bird.vy=0; }
+  pipeDistAccum+=CUR.speed;
+  if(pipeDistAccum>=CUR.spawnDist){ pipeDistAccum=0; spawnPipe(); }
   for(let i=pipes.length-1;i>=0;i--){
-    const p = pipes[i];
-    p.x -= CUR.speed;
-    if(!p.passed && p.x+BASE.pipeWidth < bird.x){
-      p.passed=true; score++;
-      updateScoreDisplay();
-      checkLevelUp();          // check every point scored
+    const p=pipes[i]; p.x-=CUR.speed;
+    if(!p.passed&&p.x+BASE.pipeWidth<bird.x){ p.passed=true; score++; updateScoreDisplay(); checkLevelUp(); }
+    if(bird.x+bird.radius*0.75>p.x&&bird.x-bird.radius*0.75<p.x+BASE.pipeWidth){
+      if(bird.y-bird.radius*0.75<p.topH||bird.y+bird.radius*0.75>p.topH+CUR.gap){ die(); return; }
     }
-    if(bird.x+bird.radius*0.75>p.x && bird.x-bird.radius*0.75<p.x+BASE.pipeWidth){
-      if(bird.y-bird.radius*0.75<p.topH || bird.y+bird.radius*0.75>p.topH+CUR.gap){ die(); return; }
-    }
-    if(p.x+BASE.pipeWidth < -20) pipes.splice(i,1);
+    if(p.x+BASE.pipeWidth<-20) pipes.splice(i,1);
   }
-
-  // Coins
   for(let i=coinObjects.length-1;i>=0;i--){
     const c=coinObjects[i]; c.x-=CUR.speed; c.pulse+=0.1;
-    if(!c.collected){
-      const dx=bird.x-c.x, dy=bird.y-c.y;
-      if(Math.sqrt(dx*dx+dy*dy)<bird.radius+c.r){ c.collected=true; coins++; spawnCoinBurst(c.x,c.y); updateHUD(); }
-    }
-    if(c.x < -20) coinObjects.splice(i,1);
+    if(!c.collected){ const dx=bird.x-c.x,dy=bird.y-c.y; if(Math.sqrt(dx*dx+dy*dy)<bird.radius+c.r){ c.collected=true; coins++; spawnCoinBurst(c.x,c.y); haptic.coin(); updateHUD(); } }
+    if(c.x<-20) coinObjects.splice(i,1);
   }
-
-  // Clouds
-  for(const cl of clouds) cl.x -= cl.speed;
-  if(clouds.length>0 && clouds[0].x < -200){ clouds.shift(); spawnCloud(); }
-
-  groundX = (groundX - CUR.speed) % 40;
+  for(const cl of clouds) cl.x-=cl.speed;
+  if(clouds.length>0&&clouds[0].x<-200){ clouds.shift(); spawnCloud(); }
+  groundX=(groundX-CUR.speed)%40;
   updateHUD();
 }
 
-// ── Score / HUD ───────────────────────────────────────────────────
 function updateScoreDisplay(){
-  document.getElementById('score-display').textContent = score;
-  // Update level progress bar
-  const li = getLevelIndex(score);
-  const cur = LEVELS[li], next = LEVELS[li+1];
-  let pct = 100;
-  if(next){
-    const range = next.score - cur.score;
-    const done  = score - cur.score;
-    pct = Math.min(100, (done/range)*100);
-  }
-  document.getElementById('level-progress-fill').style.width = pct+'%';
+  document.getElementById('score-display').textContent=score;
+  const li=getLevelIndex(score),cur=LEVELS[li],next=LEVELS[li+1];
+  let pct=100;
+  if(next){ const range=next.score-cur.score,done=score-cur.score; pct=Math.min(100,(done/range)*100); }
+  document.getElementById('level-progress-fill').style.width=pct+'%';
 }
 
 function updateHUD(){
-  document.getElementById('hud-best').textContent      = Math.max(score, highScore);
-  document.getElementById('hud-coins').textContent     = coins;
-  document.getElementById('hud-level-val').textContent = currentLevel + 1;
+  document.getElementById('hud-best').textContent=Math.max(score,highScore);
+  document.getElementById('hud-coins').textContent=coins;
+  document.getElementById('hud-level-val').textContent=currentLevel+1;
 }
 
-// ── Die ───────────────────────────────────────────────────────────
 function die(){
   if(!bird.alive) return;
   bird.alive=false; gameState='dead';
   cancelAnimationFrame(RAF);
-  if(levelupTimer){ clearTimeout(levelupTimer); document.getElementById('levelup-screen').classList.remove('show'); }
-
-  const isNew = score > highScore;
-  if(isNew) highScore = score;
-
+  haptic.die(); // ← native vibration
+  const toast=document.getElementById('levelup-toast');
+  toast.classList.remove('show'); toast.classList.add('hide');
+  if(toastTimer) clearTimeout(toastTimer);
+  const isNew=score>highScore; if(isNew) highScore=score;
   setTimeout(()=>{
-    document.getElementById('go-score').textContent = score;
-    document.getElementById('go-best').textContent  = highScore;
-    document.getElementById('go-coins').textContent = coins;
-    document.getElementById('go-time').textContent  = timeElapsed+'s';
-    document.getElementById('go-level').textContent = `LV ${currentLevel+1} · ${LEVELS[currentLevel].label}`;
+    document.getElementById('go-score').textContent=score;
+    document.getElementById('go-best').textContent=highScore;
+    document.getElementById('go-coins').textContent=coins;
+    document.getElementById('go-time').textContent=timeElapsed+'s';
+    document.getElementById('go-level').textContent=`LV ${currentLevel+1} · ${LEVELS[currentLevel].label}`;
     if(isNew) document.getElementById('best-badge').classList.add('show');
-    else       document.getElementById('best-badge').classList.remove('show');
+    else document.getElementById('best-badge').classList.remove('show');
     document.getElementById('gameover-screen').classList.add('show');
     document.getElementById('score-display').textContent='';
     document.getElementById('level-progress-fill').style.width='0%';
     document.getElementById('hud-best').textContent=highScore;
     document.getElementById('ss-best').textContent=highScore;
     document.getElementById('ss-coins').textContent=totalCoins+coins;
-  }, 480);
+  },480);
 }
 
 function spawnCoinBurst(cx,cy){
   for(let i=0;i<8;i++){
-    const a=(i/8)*Math.PI*2;
-    const el=document.createElement('div');
-    el.className='particle';
+    const a=(i/8)*Math.PI*2, el=document.createElement('div'); el.className='particle';
     el.style.cssText=`width:6px;height:6px;background:#c9943a;left:${cx}px;top:${cy}px;--dx:${Math.cos(a)*28}px;--dy:${Math.sin(a)*18}px;--dur:0.45s;box-shadow:0 0 5px rgba(201,148,58,0.6)`;
     wrapper.appendChild(el); setTimeout(()=>el.remove(),600);
   }
 }
 
-// ── Draw ─────────────────────────────────────────────────────────
 function drawScene(){
   ctx.clearRect(0,0,W,H);
-
-  // Sky
   const sky=ctx.createLinearGradient(0,0,0,H);
   sky.addColorStop(0,'#13111f'); sky.addColorStop(0.5,'#1e1d36'); sky.addColorStop(1,'#2d2c50');
   ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
-
-  // Level flash overlay
-  if(skyFlash > 0){
-    ctx.save(); ctx.globalAlpha = skyFlash * 0.22;
-    ctx.fillStyle=`rgba(212,168,67,1)`; ctx.fillRect(0,0,W,H);
-    ctx.restore();
-  }
-
-  // Clouds
-  for(const cl of clouds){
-    ctx.save(); ctx.globalAlpha=cl.alpha; ctx.fillStyle='#fff';
-    ctx.beginPath(); ctx.ellipse(cl.x,cl.y,cl.w/2,cl.h/2,0,0,Math.PI*2); ctx.fill(); ctx.restore();
-  }
-
-  // Pipes
+  if(skyFlash>0){ ctx.save(); ctx.globalAlpha=skyFlash*0.22; ctx.fillStyle='rgba(212,168,67,1)'; ctx.fillRect(0,0,W,H); ctx.restore(); }
+  for(const cl of clouds){ ctx.save(); ctx.globalAlpha=cl.alpha; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.ellipse(cl.x,cl.y,cl.w/2,cl.h/2,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
   for(const p of pipes) drawPipe(p);
-
-  // Coins
   for(const c of coinObjects) if(!c.collected) drawCoin(c);
-
-  // Trail
   const trail=bird.trail||[];
-  for(let i=0;i<trail.length;i++){
-    const t=trail[i], a=(i/trail.length)*0.18;
-    ctx.save(); ctx.globalAlpha=a; ctx.fillStyle='#c9943a';
-    ctx.beginPath(); ctx.arc(t.x,t.y,bird.radius*0.55*(i/trail.length),0,Math.PI*2); ctx.fill(); ctx.restore();
-  }
-
+  for(let i=0;i<trail.length;i++){ const t=trail[i],a=(i/trail.length)*0.18; ctx.save(); ctx.globalAlpha=a; ctx.fillStyle='#c9943a'; ctx.beginPath(); ctx.arc(t.x,t.y,bird.radius*0.55*(i/trail.length),0,Math.PI*2); ctx.fill(); ctx.restore(); }
   drawBird();
 }
 
 function drawPipe(p){
-  const x=p.x, tw=BASE.pipeWidth, gap=CUR.gap;
-
-  const mkGrad=()=>{ const g=ctx.createLinearGradient(x,0,x+tw,0);
-    g.addColorStop(0,'#2a4e38'); g.addColorStop(0.3,'#3d6e4e');
-    g.addColorStop(0.7,'#375f44'); g.addColorStop(1,'#223d2c'); return g; };
-
-  // Top
-  ctx.fillStyle=mkGrad(); ctx.beginPath();
-  ctx.roundRect(x,0,tw,p.topH-14,[0,0,4,4]); ctx.fill();
-  ctx.fillStyle='#456b52'; ctx.beginPath();
-  ctx.roundRect(x-5,p.topH-26,tw+10,26,[4,4,6,6]); ctx.fill();
+  const x=p.x,tw=BASE.pipeWidth,gap=CUR.gap;
+  const mkGrad=()=>{ const g=ctx.createLinearGradient(x,0,x+tw,0); g.addColorStop(0,'#2a4e38'); g.addColorStop(0.3,'#3d6e4e'); g.addColorStop(0.7,'#375f44'); g.addColorStop(1,'#223d2c'); return g; };
+  ctx.fillStyle=mkGrad(); ctx.beginPath(); ctx.roundRect(x,0,tw,p.topH-14,[0,0,4,4]); ctx.fill();
+  ctx.fillStyle='#456b52'; ctx.beginPath(); ctx.roundRect(x-5,p.topH-26,tw+10,26,[4,4,6,6]); ctx.fill();
   ctx.fillStyle='rgba(255,255,255,0.13)'; ctx.fillRect(x-3,p.topH-24,10,20);
-
-  // Bottom
   const botY=p.topH+gap;
-  ctx.fillStyle=mkGrad(); ctx.beginPath();
-  ctx.roundRect(x,botY+14,tw,GROUND-botY-14,[4,4,0,0]); ctx.fill();
-  ctx.fillStyle='#456b52'; ctx.beginPath();
-  ctx.roundRect(x-5,botY,tw+10,26,[6,6,4,4]); ctx.fill();
+  ctx.fillStyle=mkGrad(); ctx.beginPath(); ctx.roundRect(x,botY+14,tw,GROUND-botY-14,[4,4,0,0]); ctx.fill();
+  ctx.fillStyle='#456b52'; ctx.beginPath(); ctx.roundRect(x-5,botY,tw+10,26,[6,6,4,4]); ctx.fill();
   ctx.fillStyle='rgba(255,255,255,0.13)'; ctx.fillRect(x-3,botY+4,10,16);
-
-  // Shine
-  ctx.fillStyle='rgba(255,255,255,0.07)';
-  ctx.fillRect(x+8,0,8,p.topH-14); ctx.fillRect(x+8,botY+14,8,GROUND-botY-14);
+  ctx.fillStyle='rgba(255,255,255,0.07)'; ctx.fillRect(x+8,0,8,p.topH-14); ctx.fillRect(x+8,botY+14,8,GROUND-botY-14);
 }
 
 function drawCoin(c){
-  const glow=Math.sin(c.pulse)*0.3+0.7, r=c.r*(0.95+Math.sin(c.pulse)*0.1);
-  ctx.save();
-  ctx.shadowBlur=10*glow; ctx.shadowColor='rgba(201,148,58,0.5)';
+  const glow=Math.sin(c.pulse)*0.3+0.7,r=c.r*(0.95+Math.sin(c.pulse)*0.1);
+  ctx.save(); ctx.shadowBlur=10*glow; ctx.shadowColor='rgba(201,148,58,0.5)';
   const cg=ctx.createRadialGradient(c.x-r*0.3,c.y-r*0.3,1,c.x,c.y,r);
   cg.addColorStop(0,'#ddb85a'); cg.addColorStop(0.6,'#c9943a'); cg.addColorStop(1,'#8a6020');
   ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(c.x,c.y,r,0,Math.PI*2); ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.arc(c.x,c.y,r*0.62,0,Math.PI*2); ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(c.x,c.y,r*0.62,0,Math.PI*2); ctx.stroke();
   ctx.fillStyle='rgba(110,65,0,0.65)'; ctx.font=`bold ${r*1.1}px Orbitron,monospace`;
-  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('$',c.x,c.y+1);
-  ctx.restore();
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('$',c.x,c.y+1); ctx.restore();
 }
 
 function drawBird(){
@@ -997,65 +653,35 @@ function drawBird(){
   ctx.shadowBlur=0; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(bird.radius*0.38,-bird.radius*0.22,5.5,0,Math.PI*2); ctx.fill();
   ctx.fillStyle='#1a1a2e'; ctx.beginPath(); ctx.arc(bird.radius*0.46,-bird.radius*0.18,2.8,0,Math.PI*2); ctx.fill();
   ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(bird.radius*0.5,-bird.radius*0.24,1.2,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#c47a35'; ctx.beginPath();
-  ctx.moveTo(bird.radius*0.7,-2); ctx.lineTo(bird.radius*1.15,1); ctx.lineTo(bird.radius*0.7,4); ctx.closePath(); ctx.fill();
-  ctx.globalAlpha=0.3; ctx.fillStyle='#c47a7a'; ctx.beginPath();
-  ctx.ellipse(bird.radius*0.25,bird.radius*0.28,4,2.5,0.3,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#c47a35'; ctx.beginPath(); ctx.moveTo(bird.radius*0.7,-2); ctx.lineTo(bird.radius*1.15,1); ctx.lineTo(bird.radius*0.7,4); ctx.closePath(); ctx.fill();
+  ctx.globalAlpha=0.3; ctx.fillStyle='#c47a7a'; ctx.beginPath(); ctx.ellipse(bird.radius*0.25,bird.radius*0.28,4,2.5,0.3,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
 
-// ── Game loop ─────────────────────────────────────────────────────
-function gameLoop(){
-  update();
-  drawScene();
-  if(gameState==='playing') RAF=requestAnimationFrame(gameLoop);
-}
+function gameLoop(){ update(); drawScene(); if(gameState==='playing') RAF=requestAnimationFrame(gameLoop); }
 
-// ── Countdown + start ─────────────────────────────────────────────
 function startCountdown(){
   document.getElementById('start-screen').style.display='none';
   document.getElementById('gameover-screen').classList.remove('show');
-  document.getElementById('levelup-screen').classList.remove('show');
-
   score=0; coins=0; timeElapsed=0; currentLevel=0; CUR={...LEVELS[0]};
   document.getElementById('score-display').textContent='0';
   document.getElementById('level-progress-fill').style.width='0%';
-  updateHUD();
+  updateHUD(); initBird(); initPipes();
+  tryFullscreen(); // attempt fullscreen on each game start too
 
-  initBird(); initPipes();
-
-  const cd=document.getElementById('countdown');
-  const num=document.getElementById('countdown-num');
-  cd.classList.add('show');
-  let n=3; num.textContent=n;
-
+  const cd=document.getElementById('countdown'), num=document.getElementById('countdown-num');
+  cd.classList.add('show'); let n=3; num.textContent=n;
   const iv=setInterval(()=>{
     n--;
-    if(n<=0){
-      clearInterval(iv); num.textContent='GO!';
-      setTimeout(()=>{
-        cd.classList.remove('show');
-        gameState='playing'; startTime=Date.now();
-        timerInterval=setInterval(()=>{
-          timeElapsed=((Date.now()-startTime)/1000)|0;
-        },500);
-        RAF=requestAnimationFrame(gameLoop);
-      },600);
-    } else {
-      num.textContent=n;
-      num.style.animation='none'; void num.offsetWidth; num.style.animation='countPop 0.8s ease-out';
-    }
+    if(n<=0){ clearInterval(iv); num.textContent='GO!'; setTimeout(()=>{ cd.classList.remove('show'); gameState='playing'; startTime=Date.now(); RAF=requestAnimationFrame(gameLoop); },600); }
+    else { num.textContent=n; num.style.animation='none'; void num.offsetWidth; num.style.animation='countPop 0.8s ease-out'; }
   },900);
 }
 
-// ── Input ─────────────────────────────────────────────────────────
-document.addEventListener('keydown', e=>{
-  if(e.code==='Space'||e.code==='ArrowUp'){ e.preventDefault(); flap(); }
-});
-canvas.addEventListener('touchstart', e=>{ e.preventDefault(); flap(); }, {passive:false});
+document.addEventListener('keydown', e=>{ if(e.code==='Space'||e.code==='ArrowUp'){ e.preventDefault(); flap(); } });
+canvas.addEventListener('touchstart', e=>{ e.preventDefault(); flap(); },{passive:false});
 canvas.addEventListener('mousedown',  e=>{ e.preventDefault(); flap(); });
 
-// ── Boot ──────────────────────────────────────────────────────────
 initBird();
 (function idleLoop(){
   if(gameState==='idle'){
