@@ -6,7 +6,7 @@
 
 ## 📋 Disclaimer
 
-> **IMPORTANT — Please Read Before Proceeding**
+> **IMPORTANT: Please Read Before Proceeding**
 >
 > The games and simulations contained in this project are created **solely for awareness and entertainment purposes**. While some may visually resemble casino games, betting platforms, or other wagering interfaces, **no real money, gambling, or financial transactions are involved or intended.**
 >
@@ -61,7 +61,7 @@ Online scams disguised as games, lotteries, and betting platforms are one of the
 
 ## ⚖️ Legal Notice
 
-All content within this project is intended for **lawful security research and public education only**. Use of this material outside its intended purpose — including any attempt to replicate, deploy, or distribute fraudulent platforms — is strictly prohibited and may violate applicable laws.
+All content within this project is intended for **lawful security research and public education only**. Use of this material outside its intended purpose including any attempt to replicate, deploy, or distribute fraudulent platforms is strictly prohibited and may violate applicable laws.
 
 By accessing or using this project, you agree to use it **responsibly and ethically**.
 
