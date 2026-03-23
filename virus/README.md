@@ -14,7 +14,7 @@ Most people have no idea what happens when they run a command like:
 irm https://some-url.com/script.ps1 | iex
 ```
 
-This project shows them — viscerally — in 60 seconds.
+This project shows them [viscerally] in 60 seconds.
 
 The script walks through a simulated attack chain:
 - Silent payload download (fake)
@@ -32,7 +32,7 @@ The goal is to make the danger *feel real* before explaining that it wasn't.
 
 | File | Purpose |
 |------|---------|
-| `awareness.ps1` | Main PowerShell awareness script |
+| `legit.ps1` | Main PowerShell awareness script |
 | `skull.png` | Scare image: displays fullscreen during simulated attack phase |
 | `awareness.png` | Tips card: displays fullscreen at the end of the demo |
 | `README.md` | This file |
