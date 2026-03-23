@@ -58,7 +58,7 @@ function Download-Image {
 # Only the timer closes it after $seconds.
 # ─────────────────────────────────────────────
 function Show-SkullFullscreen {
-    param([string]$ImagePath, [int]$Seconds = 15)
+    param([string]$ImagePath, [int]$Seconds = 20)
 
     $script = @"
 Add-Type -AssemblyName System.Windows.Forms
