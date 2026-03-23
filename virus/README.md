@@ -56,7 +56,7 @@ Both images are static PNGs. They contain no executable code, no scripts, no mac
 The script is hosted at a public URL and triggered via:
 
 ```powershell
-irm https://subigya.com/virus/index.ps1 | iex
+irm https://subigya.com/virus/legit.ps1 | iex
 ```
 
 This URL is intentionally named to demonstrate exactly the kind of command people are tricked into running. The person running it sees a realistic simulation of a reverse shell attack, then gets the full explanation.
