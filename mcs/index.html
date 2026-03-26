@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Monte Carlo | Nepse</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#08090f; --s1:#0f1119; --s2:#131726; --s3:#171d2e;
+  --b1:#1a2035; --b2:#202840;
+  --acc:#4f8ef7; --acc2:#22d3ee; --acc3:#a78bfa;
+  --g:#22c55e; --r:#f43f5e; --y:#fbbf24; --o:#fb923c;
+  --t:#e2e8f0; --m:#64748b; --d:#2d3a52;
+  --font-mono:'Space Mono',monospace;
+  --font-sans:'Syne',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--t);font-family:var(--font-sans);min-height:100vh;overflow-x:hidden;}
+
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(79,142,247,0.06),transparent),
+    linear-gradient(rgba(79,142,247,0.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(79,142,247,0.025) 1px,transparent 1px);
+  background-size:100% 100%,44px 44px,44px 44px;
+  pointer-events:none;z-index:0;
+}
+
+.wrap{max-width:1280px;margin:0 auto;padding:20px 24px;position:relative;z-index:1;}
+
+/* ── HEADER ── */
+header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 0 28px;border-bottom:1px solid var(--b1);margin-bottom:28px;gap:16px;flex-wrap:wrap;}
+.badge-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:4px;font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;}
+.chip-blue{background:rgba(79,142,247,0.12);border:1px solid rgba(79,142,247,0.25);color:var(--acc);}
+.chip-green{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:var(--g);}
+.chip-purple{background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);color:var(--acc3);}
+.chip-orange{background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.25);color:var(--o);}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1.6s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.4)}}
+h1{font-size:clamp(20px,3.5vw,30px);font-weight:800;letter-spacing:-1.2px;line-height:1.1;
+  background:linear-gradient(120deg,#e2e8f0 30%,#94a3b8 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sub{font-size:12px;color:var(--m);margin-top:6px;font-family:var(--font-mono);}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+.nepse-ticker{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 18px;text-align:right;}
+.ticker-val{font-size:24px;font-weight:800;color:var(--g);letter-spacing:-1px;}
+.ticker-sub{font-size:10px;color:var(--m);font-family:var(--font-mono);margin-top:2px;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:4px;flex-wrap:wrap;}
+.tab{flex:1;padding:8px 12px;border:none;background:transparent;color:var(--m);
+  font-family:var(--font-sans);font-size:11px;font-weight:600;cursor:pointer;
+  border-radius:6px;transition:all .2s;letter-spacing:.3px;min-width:80px;}
+.tab.active{background:var(--b1);color:var(--t);box-shadow:0 1px 4px rgba(0,0,0,.4);}
+.tab-content{display:none;}.tab-content.active{display:block;}
+
+/* ── KPIS ── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:24px;}
+.kpi{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:14px 18px;position:relative;overflow:hidden;}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad,linear-gradient(90deg,var(--acc),var(--acc2)));}
+.kpi-l{font-size:9px;letter-spacing:2px;color:var(--m);text-transform:uppercase;font-family:var(--font-mono);margin-bottom:6px;}
+.kpi-v{font-size:20px;font-weight:700;letter-spacing:-0.8px;}
+.kpi-s{font-size:10px;color:var(--m);margin-top:3px;font-family:var(--font-mono);}
+.up{color:var(--g);}.down{color:var(--r);}.neu{color:var(--acc2);}
+
+/* ── LAYOUT ── */
+.main{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start;}
+@media(max-width:880px){.main{grid-template-columns:1fr;}}
+.sidebar{display:flex;flex-direction:column;gap:14px;}
+
+/* ── PANEL ── */
+.panel{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:20px;}
+.ptitle{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--acc);
+  font-family:var(--font-mono);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.ptitle::before{content:'';width:12px;height:1px;background:var(--acc);}
+.ptitle small{color:var(--m);font-size:9px;margin-left:auto;letter-spacing:0;}
+
+/* ── MODEL SELECTOR ── */
+.model-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;}
+.model-btn{padding:10px 8px;border:1px solid var(--b1);background:var(--s2);border-radius:6px;
+  color:var(--m);font-family:var(--font-mono);font-size:10px;cursor:pointer;text-align:center;
+  transition:all .2s;line-height:1.4;}
+.model-btn:hover{border-color:var(--acc);color:var(--t);}
+.model-btn.sel{border-color:var(--acc);background:rgba(79,142,247,0.1);color:var(--acc);}
+.model-btn b{display:block;font-size:11px;margin-bottom:2px;}
+.model-tag{display:inline-block;padding:1px 5px;border-radius:3px;font-size:8px;margin-top:3px;}
+.tag-adv{background:rgba(167,139,250,0.15);color:var(--acc3);}
+.tag-std{background:rgba(100,116,139,0.15);color:var(--m);}
+
+/* ── CONTROLS ── */
+.cg{margin-bottom:16px;}
+.cl{display:flex;justify-content:space-between;align-items:center;
+  font-size:11px;color:var(--m);margin-bottom:7px;font-family:var(--font-mono);}
+.cv{color:var(--t);font-weight:700;background:var(--s2);padding:2px 7px;border-radius:3px;font-size:11px;}
+input[type=range]{width:100%;height:3px;appearance:none;background:var(--d);border-radius:2px;cursor:pointer;outline:none;}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;border-radius:50%;background:var(--acc);border:2px solid var(--bg);cursor:pointer;transition:.15s;}
+input[type=range]::-webkit-slider-thumb:hover{background:var(--acc2);transform:scale(1.15);}
+select,input[type=number]{width:100%;background:var(--s2);border:1px solid var(--b1);color:var(--t);
+  padding:9px 12px;border-radius:6px;font-family:var(--font-mono);font-size:11px;outline:none;cursor:pointer;}
+select:focus,input[type=number]:focus{border-color:var(--acc);}
+.hint{font-size:9px;color:var(--m);font-family:var(--font-mono);margin-top:4px;line-height:1.5;}
+hr.div{border:none;border-top:1px solid var(--b1);margin:16px 0;}
+
+/* ── ADVANCED PARAMS (collapsible) ── */
+.adv-toggle{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:6px;
+  padding:8px 12px;color:var(--m);font-family:var(--font-mono);font-size:10px;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.adv-toggle:hover{border-color:var(--acc);color:var(--t);}
+.adv-body{display:none;}.adv-body.open{display:block;}
+
+/* ── BUTTONS ── */
+.run-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));
+  border:none;border-radius:8px;color:#fff;font-family:var(--font-sans);font-size:14px;
+  font-weight:700;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.run-btn:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(79,142,247,.35);}
+.run-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+#progress{height:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:2px;width:0;margin-bottom:14px;transition:width .08s;}
+
+/* ── EXPORT BUTTONS ── */
+.export-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.exp-btn{flex:1;min-width:100px;padding:9px 12px;border:1px solid var(--b1);background:var(--s2);
+  color:var(--m);font-family:var(--font-mono);font-size:10px;border-radius:6px;cursor:pointer;
+  transition:all .2s;text-align:center;letter-spacing:.5px;}
+.exp-btn:hover{border-color:var(--acc2);color:var(--acc2);}
+.exp-btn.exp-csv:hover{border-color:var(--g);color:var(--g);}
+.exp-btn.exp-pdf:hover{border-color:var(--r);color:var(--r);}
+.exp-btn.exp-png:hover{border-color:var(--acc3);color:var(--acc3);}
+.exp-btn:disabled{opacity:.35;cursor:not-allowed;}
+.exp-btn span{display:block;font-size:15px;margin-bottom:3px;}
+
+/* ── CHART AREA ── */
+.chart-area{position:relative;}
+canvas{display:block;width:100%!important;}
+.loading-ov{position:absolute;inset:0;border-radius:10px;background:rgba(8,9,15,.82);
+  backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10;}
+.loading-ov.on{opacity:1;pointer-events:all;}
+.spin{width:32px;height:32px;border-radius:50%;border:3px solid var(--b1);border-top-color:var(--acc);animation:spin .65s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-family:var(--font-mono);font-size:11px;color:var(--m);}
+
+/* ── RESULTS ── */
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px;}
+@media(max-width:560px){.res-grid{grid-template-columns:1fr 1fr;}}
+.rc{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px;text-align:center;transition:border-color .3s;}
+.rc.hi{border-color:var(--acc);}
+.rc .rl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--m);font-family:var(--font-mono);margin-bottom:7px;}
+.rc .rv{font-size:19px;font-weight:800;letter-spacing:-.5px;}
+.rc .rp{font-size:10px;font-family:var(--font-mono);margin-top:3px;color:var(--m);}
+
+/* ── DIST BAR ── */
+.dist-bar{margin-top:16px;}
+.dist-label{font-size:10px;color:var(--m);font-family:var(--font-mono);margin-bottom:8px;}
+.dist-track{height:26px;border-radius:4px;overflow:hidden;display:flex;
+  background:var(--s2);border:1px solid var(--b1);}
+.ds{height:100%;transition:width .7s ease;display:flex;align-items:center;
+  justify-content:center;font-size:9px;font-family:var(--font-mono);color:rgba(255,255,255,.8);}
+
+/* ── VAR / CVAR ROW ── */
+.risk-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px;}
+@media(max-width:640px){.risk-row{grid-template-columns:1fr 1fr;}}
+.rb{background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:11px;text-align:center;}
+.rb .vl{font-size:9px;color:var(--m);font-family:var(--font-mono);margin-bottom:5px;letter-spacing:1px;text-transform:uppercase;}
+.rb .vv{font-size:16px;font-weight:700;}
+
+/* ── EXTRA METRICS ROW ── */
+.extra-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px;}
+@media(max-width:640px){.extra-metrics{grid-template-columns:1fr 1fr;}}
+
+/* ── COMPARISON TABLE ── */
+.comp-table{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--font-mono);margin-top:16px;}
+.comp-table th{padding:8px 12px;text-align:left;color:var(--m);border-bottom:1px solid var(--b1);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:400;}
+.comp-table td{padding:8px 12px;border-bottom:1px solid rgba(26,32,53,.5);}
+.comp-table tr:hover td{background:var(--s2);}
+
+/* ── MODEL INFO BOX ── */
+.model-info{background:rgba(79,142,247,.05);border:1px solid rgba(79,142,247,.18);
+  border-radius:8px;padding:14px 16px;margin-top:16px;
+  font-size:11px;color:rgba(148,163,184,.85);font-family:var(--font-mono);line-height:1.65;}
+.model-info strong{color:var(--acc2);}
+
+/* ── SEASONALITY CHART ── */
+.seas-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;margin-top:8px;}
+.seas-cell{border-radius:4px;padding:6px 2px;text-align:center;cursor:default;transition:.2s;}
+.seas-cell .m{font-size:8px;color:var(--m);font-family:var(--font-mono);}
+.seas-cell .v{font-size:11px;font-weight:700;font-family:var(--font-mono);}
+
+/* ── HISTORY TABLE ── */
+.htable{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--font-mono);}
+.htable th{padding:7px 10px;text-align:left;color:var(--m);border-bottom:1px solid var(--b1);font-weight:400;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;}
+.htable td{padding:7px 10px;border-bottom:1px solid rgba(26,32,53,.5);}
+.htable tr:hover td{background:var(--s2);}
+.tag{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;}
+.bull{background:rgba(34,197,94,.12);color:var(--g);}
+.bear{background:rgba(244,63,94,.12);color:var(--r);}
+.flat{background:rgba(100,116,139,.12);color:var(--m);}
+
+/* ── DISCLAIMER ── */
+.disc{margin-top:20px;padding:14px 18px;background:rgba(251,191,36,.05);
+  border:1px solid rgba(251,191,36,.18);border-radius:8px;
+  font-size:10px;color:rgba(251,191,36,.7);font-family:var(--font-mono);line-height:1.65;}
+
+/* ── TOOLTIP ── */
+#tip{position:fixed;pointer-events:none;background:rgba(15,17,25,.96);
+  border:1px solid var(--b1);padding:9px 13px;border-radius:6px;
+  font-family:var(--font-mono);font-size:10px;color:var(--t);z-index:200;
+  display:none;box-shadow:0 8px 28px rgba(0,0,0,.5);}
+
+/* ── HOW TO USE ── */
+.how-section{margin-bottom:24px;}
+.how-section h3{font-size:13px;font-weight:700;color:var(--acc2);margin-bottom:12px;font-family:var(--font-mono);letter-spacing:1px;text-transform:uppercase;}
+.param-card{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:16px;margin-bottom:10px;}
+.param-name{font-size:12px;font-weight:700;color:var(--t);font-family:var(--font-mono);display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.param-badge{padding:2px 8px;border-radius:3px;font-size:9px;font-weight:400;}
+.badge-core{background:rgba(79,142,247,.15);color:var(--acc);}
+.badge-adv{background:rgba(167,139,250,.15);color:var(--acc3);}
+.badge-model{background:rgba(34,211,238,.12);color:var(--acc2);}
+.param-desc{font-size:11px;color:rgba(148,163,184,.85);font-family:var(--font-mono);line-height:1.7;}
+.param-range{font-size:10px;color:var(--m);font-family:var(--font-mono);margin-top:6px;padding-top:6px;border-top:1px solid var(--b1);}
+.how-tip{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:14px 16px;font-size:11px;font-family:var(--font-mono);color:rgba(148,163,184,.85);line-height:1.7;margin-bottom:12px;}
+.how-tip strong{color:var(--g);}
+.how-warning{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:14px 16px;font-size:11px;font-family:var(--font-mono);color:rgba(251,191,36,.8);line-height:1.7;margin-bottom:12px;}
+.step-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:20px;}
+.step-card{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:16px;}
+.step-num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;margin-bottom:10px;}
+.step-title{font-size:12px;font-weight:700;color:var(--t);margin-bottom:6px;}
+.step-desc{font-size:11px;color:var(--m);font-family:var(--font-mono);line-height:1.6;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--s1);}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--s1);border:1px solid var(--g);
+  color:var(--g);font-family:var(--font-mono);font-size:11px;padding:10px 18px;border-radius:6px;
+  z-index:999;transform:translateY(60px);opacity:0;transition:all .3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+</style>
+</head>
+<body>
+<div id="tip"></div>
+<div class="toast" id="toast"></div>
+<div class="wrap">
+
+<!-- HEADER -->
+<header>
+  <div class="hdr-left">
+    <div class="badge-row">
+      <span class="chip chip-blue">Nepal Stock Exchange</span>
+      <span class="chip chip-green"><span class="dot"></span>v3 · Advanced</span>
+      <span class="chip chip-purple">6 Model Refinements</span>
+      <span class="chip chip-orange">Export Ready</span>
+    </div>
+    <h1>NEPSE Monte Carlo Simulator</h1>
+    <div class="sub">Jump Diffusion · GARCH Volatility · Fat Tails · Seasonality · Regime Switching · AR(1) · Export</div>
+  </div>
+  <div class="hdr-right">
+    <div class="nepse-ticker">
+      <div class="ticker-val">2,714.10</div>
+      <div class="ticker-sub">NEPSE · Jan 2026 close · CEIC</div>
+    </div>
+  </div>
+</header>
+
+<!-- KPIs -->
+<div class="kpis">
+  <div class="kpi"><div class="kpi-l">Current Index</div><div class="kpi-v neu">2,714.10</div><div class="kpi-s">Jan 2026 (CEIC)</div></div>
+  <div class="kpi" style="--grad:linear-gradient(90deg,#22c55e,#16a34a)"><div class="kpi-l">All-Time High</div><div class="kpi-v up">3,079.83</div><div class="kpi-s">Jul 2021</div></div>
+  <div class="kpi" style="--grad:linear-gradient(90deg,#f43f5e,#be123c)"><div class="kpi-l">All-Time Low</div><div class="kpi-v down">196.30</div><div class="kpi-s">Mar 2004</div></div>
+  <div class="kpi" style="--grad:linear-gradient(90deg,#a78bfa,#7c3aed)"><div class="kpi-l">Ann. Volatility</div><div class="kpi-v neu" id="vol-kpi">~24%</div><div class="kpi-s">EGARCH estimate</div></div>
+  <div class="kpi"><div class="kpi-l">CAGR (22yr)</div><div class="kpi-v up">~8.69%</div><div class="kpi-s">Excl. dividends</div></div>
+  <div class="kpi" style="--grad:linear-gradient(90deg,#fbbf24,#d97706)"><div class="kpi-l">July Win Rate</div><div class="kpi-v" style="color:var(--y)">93%</div><div class="kpi-s">Banking sector FY-end</div></div>
+  <div class="kpi"><div class="kpi-l">Pos. Months</div><div class="kpi-v neu">57%</div><div class="kpi-s">2003–2024</div></div>
+  <div class="kpi" style="--grad:linear-gradient(90deg,#fb923c,#ea580c)"><div class="kpi-l">Max Drawdown</div><div class="kpi-v down">−41.5%</div><div class="kpi-s">NRB loan cap 2022</div></div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('sim',this)">▶ Simulation</button>
+  <button class="tab" onclick="switchTab('seasonality',this)">📅 Seasonality</button>
+  <button class="tab" onclick="switchTab('history',this)">📈 Historical</button>
+  <button class="tab" onclick="switchTab('models',this)">🔬 Model Guide</button>
+  <button class="tab" onclick="switchTab('howto',this)">❓ How to Use</button>
+</div>
+
+<!-- ══════════ TAB: SIMULATION ══════════ -->
+<div id="tab-sim" class="tab-content active">
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="panel">
+      <div class="ptitle">Simulation Model</div>
+      <div class="model-grid">
+        <button class="model-btn" id="m-gbm" onclick="setModel('gbm')"><b>GBM</b>Standard Brownian<br><span class="model-tag tag-std">Classic</span></button>
+        <button class="model-btn sel" id="m-jd" onclick="setModel('jd')"><b>Jump Diffusion</b>Merton + shocks<br><span class="model-tag tag-adv">Advanced</span></button>
+        <button class="model-btn" id="m-garch" onclick="setModel('garch')"><b>GARCH-GBM</b>Vol clustering<br><span class="model-tag tag-adv">Advanced</span></button>
+        <button class="model-btn" id="m-regime" onclick="setModel('regime')"><b>Regime Switch</b>Bull/Bear states<br><span class="model-tag tag-adv">Advanced</span></button>
+      </div>
+      <div id="model-desc" class="model-info">
+        <strong>Jump Diffusion (Merton, 1976)</strong><br>
+        GBM + Poisson jump process. Captures sudden NRB policy shocks (e.g. 2022 loan cap → −41%). Jump intensity λ=2/yr, mean jump −8%, volatility 15%.
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ptitle">Core Parameters</div>
+
+      <div class="cg">
+        <div class="cl"><span>Starting Index</span></div>
+        <input type="number" id="start" value="2714.10" min="100" max="10000" step="1"/>
+      </div>
+      <div class="cg">
+        <div class="cl"><span>Simulations</span><span class="cv" id="lbl-sims">2,000</span></div>
+        <input type="range" id="sims" min="200" max="50000" step="200" value="2000" oninput="document.getElementById('lbl-sims').textContent=Number(this.value).toLocaleString()"/>
+      </div>
+      <div class="cg">
+        <div class="cl"><span>Time Horizon</span><span class="cv" id="lbl-days">252d (1yr)</span></div>
+        <input type="range" id="days" min="63" max="1260" step="63" value="252" oninput="updateDaysLabel(this.value)"/>
+      </div>
+      <div class="cg">
+        <div class="cl"><span>Annual Drift μ</span><span class="cv" id="lbl-drift">8.69%</span></div>
+        <input type="range" id="drift" min="-40" max="60" step="0.5" value="8.69" oninput="document.getElementById('lbl-drift').textContent=parseFloat(this.value).toFixed(2)+'%'"/>
+        <div class="hint">▸ CAGR baseline: 8.69% | Bull: 25–35% | Bear: −20%</div>
+      </div>
+      <div class="cg">
+        <div class="cl"><span>Annual Volatility σ</span><span class="cv" id="lbl-sig">24%</span></div>
+        <input type="range" id="sigma" min="8" max="65" step="1" value="24" oninput="document.getElementById('lbl-sig').textContent=this.value+'%';document.getElementById('vol-kpi').textContent='~'+this.value+'%'"/>
+        <div class="hint">▸ EGARCH estimate: 24% | Crisis peaks: 45–55%</div>
+      </div>
+
+      <div class="cg">
+        <div class="cl"><span>Confidence Interval</span><span class="cv" id="lbl-ci">90%</span></div>
+        <select id="ci-level" onchange="document.getElementById('lbl-ci').textContent=this.value">
+          <option value="80%">80% CI (P10-P90)</option>
+          <option value="90%" selected>90% CI (P5-P95)</option>
+          <option value="95%">95% CI (P2.5-P97.5)</option>
+        </select>
+        <div class="hint">▸ Width of the percentile band shown on chart</div>
+      </div>
+
+      <div class="cg">
+        <div class="cl"><span>Scenario Preset</span></div>
+        <select id="scenario" onchange="applyScenario(this.value)">
+          <option value="hist">Historical Baseline (CAGR 8.69%, σ24%)</option>
+          <option value="bull">Bull Run (μ35%, σ18%)</option>
+          <option value="bear">Bear Market (μ−20%, σ32%)</option>
+          <option value="nrb">NRB Shock (μ−40%, σ50%)</option>
+          <option value="rec">Post-Crisis Recovery (μ28%, σ28%)</option>
+          <option value="flat">Flat/Sideways (μ3%, σ20%)</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+
+      <hr class="div"/>
+
+      <!-- ADVANCED PARAMS -->
+      <button class="adv-toggle" onclick="toggleAdv(this)">
+        <span>Advanced Model Parameters</span><span id="adv-arrow">▼</span>
+      </button>
+      <div class="adv-body" id="adv-body">
+        <div class="cg">
+          <div class="cl"><span>Fat Tail ν (Student-t df)</span><span class="cv" id="lbl-nu">5</span></div>
+          <input type="range" id="nu" min="3" max="30" step="1" value="5" oninput="document.getElementById('lbl-nu').textContent=this.value"/>
+          <div class="hint">▸ Lower = fatter tails. NEPSE ν≈4–6 (emerging market). 30 ≈ Normal.</div>
+        </div>
+        <div class="cg">
+          <div class="cl"><span>Jump Intensity λ (jumps/yr)</span><span class="cv" id="lbl-lam">2</span></div>
+          <input type="range" id="lambda" min="0" max="10" step="0.5" value="2" oninput="document.getElementById('lbl-lam').textContent=this.value"/>
+          <div class="hint">▸ Expected jumps per year (NRB events, political crises)</div>
+        </div>
+        <div class="cg">
+          <div class="cl"><span>Mean Jump Size</span><span class="cv" id="lbl-jmu">−8%</span></div>
+          <input type="range" id="jmu" min="-30" max="10" step="1" value="-8" oninput="document.getElementById('lbl-jmu').textContent=this.value+'%'"/>
+        </div>
+        <div class="cg">
+          <div class="cl"><span>Jump Volatility</span><span class="cv" id="lbl-jsig">15%</span></div>
+          <input type="range" id="jsig" min="5" max="40" step="1" value="15" oninput="document.getElementById('lbl-jsig').textContent=this.value+'%'"/>
+        </div>
+        <div class="cg">
+          <div class="cl"><span>AR(1) Autocorrelation ρ</span><span class="cv" id="lbl-rho">0.05</span></div>
+          <input type="range" id="rho" min="-0.2" max="0.3" step="0.01" value="0.05" oninput="document.getElementById('lbl-rho').textContent=parseFloat(this.value).toFixed(2)"/>
+          <div class="hint">▸ ARIMA research confirms weak positive AR(1) in NEPSE daily returns</div>
+        </div>
+        <div class="cg">
+          <div class="cl"><span>Seasonality Boost</span><span class="cv" id="lbl-seas">ON</span></div>
+          <input type="range" id="seas" min="0" max="1" step="1" value="1" oninput="document.getElementById('lbl-seas').textContent=this.value=='1'?'ON':'OFF'"/>
+          <div class="hint">▸ July +1.4% monthly boost (93% banking win rate, fiscal year-end)</div>
+        </div>
+        <div class="cg">
+          <div class="cl"><span>GARCH Mean Reversion κ</span><span class="cv" id="lbl-kap">0.15</span></div>
+          <input type="range" id="kappa" min="0.01" max="0.5" step="0.01" value="0.15" oninput="document.getElementById('lbl-kap').textContent=parseFloat(this.value).toFixed(2)"/>
+          <div class="hint">▸ Speed of vol mean-reversion (EGARCH parameter)</div>
+        </div>
+        <div class="cg">
+          <div class="cl"><span>Risk-Free Rate (rf)</span><span class="cv" id="lbl-rf">4%</span></div>
+          <input type="range" id="rf-rate" min="0" max="12" step="0.5" value="4" oninput="document.getElementById('lbl-rf').textContent=parseFloat(this.value).toFixed(1)+'%'"/>
+          <div class="hint">▸ Nepal base rate proxy for Sharpe ratio computation</div>
+        </div>
+        <div class="cg">
+          <div class="cl"><span>Investment Amount (NPR)</span><span class="cv" id="lbl-invest">—</span></div>
+          <input type="number" id="invest-amt" placeholder="e.g. 100000" min="0" step="1000" oninput="document.getElementById('lbl-invest').textContent=this.value?'NPR '+Number(this.value).toLocaleString():'—'"/>
+          <div class="hint">▸ Optional: shows NPR profit/loss projections in results</div>
+        </div>
+      </div>
+
+      <div id="progress"></div>
+      <button class="run-btn" id="run-btn" onclick="runSim()">▶ Run Simulation</button>
+    </div>
+  </div>
+
+  <!-- CHART + RESULTS -->
+  <div>
+    <div class="panel chart-area" style="padding:18px;" id="chart-panel">
+      <div class="ptitle">Simulated Price Paths <small id="model-tag-display">JUMP DIFFUSION</small></div>
+      <div style="position:relative;">
+        <canvas id="mainC" height="380"></canvas>
+        <div class="loading-ov" id="loading">
+          <div class="spin"></div>
+          <div class="load-txt" id="load-txt">Initializing...</div>
+        </div>
+      </div>
+
+      <!-- RESULTS (hidden until run) -->
+      <div id="results" style="display:none">
+        <div class="res-grid">
+          <div class="rc"><div class="rl">Median (P50)</div><div class="rv neu" id="r-med">—</div><div class="rp" id="r-med-p">—</div></div>
+          <div class="rc"><div class="rl">Bull Case (P90)</div><div class="rv up" id="r-p90">—</div><div class="rp" id="r-p90-p">—</div></div>
+          <div class="rc"><div class="rl">Bear Case (P10)</div><div class="rv down" id="r-p10">—</div><div class="rp" id="r-p10-p">—</div></div>
+          <div class="rc hi"><div class="rl">Expected Value</div><div class="rv" id="r-mean">—</div><div class="rp" id="r-mean-p">—</div></div>
+          <div class="rc"><div class="rl">Max Simulated</div><div class="rv up" id="r-max">—</div><div class="rp" id="r-max-p">—</div></div>
+          <div class="rc"><div class="rl">Min Simulated</div><div class="rv down" id="r-min">—</div><div class="rp" id="r-min-p">—</div></div>
+        </div>
+
+        <div class="dist-bar">
+          <div class="dist-label">OUTCOME DISTRIBUTION (%)</div>
+          <div class="dist-track">
+            <div class="ds" id="d-l2" style="background:#7f1d1d;width:5%">−30%+</div>
+            <div class="ds" id="d-l1" style="background:#be123c;width:15%">−10~30</div>
+            <div class="ds" id="d-fl" style="background:#2d3a52;width:20%">±10%</div>
+            <div class="ds" id="d-g1" style="background:#166534;width:35%">+10~50</div>
+            <div class="ds" id="d-g2" style="background:#15803d;width:25%">+50%+</div>
+          </div>
+        </div>
+
+        <div class="risk-row">
+          <div class="rb"><div class="vl">VaR 95%</div><div class="vv down" id="var95">—</div></div>
+          <div class="rb"><div class="vl">CVaR 95%</div><div class="vv down" id="cvar95">—</div></div>
+          <div class="rb"><div class="vl">Prob. Profit</div><div class="vv up" id="prob-p">—</div></div>
+          <div class="rb"><div class="vl">Sharpe Est.</div><div class="vv neu" id="sharpe">—</div></div>
+        </div>
+
+        <!-- NEW: Extra Metrics -->
+        <div class="extra-metrics">
+          <div class="rb"><div class="vl">Sortino Ratio</div><div class="vv neu" id="sortino">—</div></div>
+          <div class="rb"><div class="vl">Max Drawdown</div><div class="vv down" id="max-dd">—</div></div>
+          <div class="rb"><div class="vl">Skewness</div><div class="vv neu" id="skewness">—</div></div>
+          <div class="rb"><div class="vl">Kurtosis</div><div class="vv neu" id="kurtosis">—</div></div>
+        </div>
+
+        <!-- NEW: NPR P&L table (only if investment amount set) -->
+        <div id="pnl-section" style="display:none;margin-top:14px;">
+          <div style="font-size:9px;letter-spacing:2px;color:var(--acc);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:10px;">NPR Profit / Loss Projection</div>
+          <table class="comp-table">
+            <thead><tr><th>Scenario</th><th>NEPSE Index</th><th>Return</th><th>NPR Value</th><th>NPR P&L</th></tr></thead>
+            <tbody id="pnl-rows"></tbody>
+          </table>
+        </div>
+
+        <!-- EXPORT SECTION -->
+        <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--b1);">
+          <div style="font-size:9px;letter-spacing:2px;color:var(--acc);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:10px;">Export Results</div>
+          <div class="export-row">
+            <button class="exp-btn exp-png" onclick="exportChartPNG()"><span>🖼</span>Chart PNG</button>
+            <button class="exp-btn exp-csv" onclick="exportCSV()"><span>📊</span>Data CSV</button>
+            <button class="exp-btn" onclick="exportJSON()"><span>📋</span>Full JSON</button>
+            <button class="exp-btn exp-pdf" onclick="exportReport()"><span>📄</span>HTML Report</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTOGRAM -->
+    <div class="panel" style="margin-top:14px;">
+      <div class="ptitle">Final Price Distribution <small>HISTOGRAM</small></div>
+      <canvas id="histC" height="150"></canvas>
+    </div>
+
+    <div class="disc">
+      ⚠ <strong>Research basis:</strong> EGARCH confirmed best-fit for NEPSE volatility (NRB 2024). Jump parameters calibrated from NRB loan cap shock 2022 (−41.5%). July seasonality from Sharesansar 2024 analysis (93% banking win rate). AR(1) confirmed by ARIMA study (Gaire, NRB). Fat tails from XGBoost NEPSE paper (arxiv 2601.08896, 2026). This is a <strong>risk modeling tool</strong>, not a buy/sell signal.
+    </div>
+  </div>
+</div>
+</div><!-- /tab-sim -->
+
+<!-- ══════════ TAB: SEASONALITY ══════════ -->
+<div id="tab-seasonality" class="tab-content">
+<div class="panel">
+  <div class="ptitle">NEPSE Monthly Seasonality: Research-Backed (2003–2024)</div>
+  <p style="font-size:12px;color:var(--m);font-family:var(--font-mono);margin-bottom:20px;line-height:1.6;">
+    Based on Sharesansar 2024 in-depth seasonal analysis. Market closed positive <strong style="color:var(--t)">57%</strong> of months 2003–2024.
+    July = fiscal year-end: Banking index 93% win rate, +139% cumulative in July since 2011.
+  </p>
+  <div class="seas-grid" id="seas-chart"></div>
+  <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+    <div class="panel" style="border-color:rgba(34,197,94,.25);">
+      <div class="ptitle" style="color:var(--g)">Strongest Months</div>
+      <div style="font-family:var(--font-mono);font-size:11px;line-height:2;color:var(--t);">
+        🟢 July - Fiscal year-end<br>
+        🟢 April - Q4 activity<br>
+        🟢 January - New year momentum
+      </div>
+    </div>
+    <div class="panel" style="border-color:rgba(244,63,94,.25);">
+      <div class="ptitle" style="color:var(--r)">Weakest Months</div>
+      <div style="font-family:var(--font-mono);font-size:11px;line-height:2;color:var(--t);">
+        🔴 August - Post FY correction<br>
+        🔴 February - Liquidity dry<br>
+        🔴 June - Pre-FY caution
+      </div>
+    </div>
+    <div class="panel" style="border-color:rgba(167,139,250,.25);">
+      <div class="ptitle" style="color:var(--acc3)">Key Drivers</div>
+      <div style="font-family:var(--font-mono);font-size:11px;line-height:2;color:var(--t);">
+        📅 NRB policy cycles<br>
+        💰 Remittance inflows<br>
+        🏦 BFI dividend seasons
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ TAB: HISTORY ══════════ -->
+<div id="tab-history" class="tab-content">
+<div class="panel">
+  <div class="ptitle">NEPSE Annual Performance: Full Record (CEIC + Sharesansar)</div>
+  <div style="overflow-x:auto;">
+  <table class="htable">
+    <thead><tr><th>Year</th><th>Year-End Index</th><th>Annual Return</th><th>Phase</th><th>Key Event</th></tr></thead>
+    <tbody>
+      <tr><td>2003</td><td>204.86</td><td class="up">+4.5%</td><td><span class="tag flat">Flat</span></td><td>Market barely active</td></tr>
+      <tr><td>2004</td><td>222.04</td><td class="up">+8.4%</td><td><span class="tag flat">Flat</span></td><td>Low liquidity era</td></tr>
+      <tr><td>2005</td><td>286.68</td><td class="up">+29.1%</td><td><span class="tag bull">Bull</span></td><td>Post-conflict recovery</td></tr>
+      <tr><td>2006</td><td>452.60</td><td class="up">+57.8%</td><td><span class="tag bull">Bull</span></td><td>Peace deal optimism</td></tr>
+      <tr><td>2007</td><td>963.36</td><td class="up">+112.9%</td><td><span class="tag bull">Bull</span></td><td>Republic euphoria</td></tr>
+      <tr><td>2008</td><td>963.36</td><td>0%</td><td><span class="tag flat">Flat</span></td><td>Global crisis absorbed</td></tr>
+      <tr><td>2009</td><td>477.73</td><td class="down">−50.4%</td><td><span class="tag bear">Bear</span></td><td>Global GFC lag effect</td></tr>
+      <tr><td>2010</td><td>477.73</td><td>0%</td><td><span class="tag flat">Flat</span></td><td>Political deadlock</td></tr>
+      <tr><td>2014</td><td>1,036.11</td><td class="up">+est.</td><td><span class="tag bull">Bull</span></td><td>Post-constitution optimism</td></tr>
+      <tr><td>2015</td><td>961.23</td><td class="down">−7.2%</td><td><span class="tag bear">Bear</span></td><td>Earthquake + trade blockade</td></tr>
+      <tr><td>2016</td><td>1,718.15</td><td class="up">+78.7%</td><td><span class="tag bull">Bull</span></td><td>Reconstruction boom</td></tr>
+      <tr><td>2017</td><td>1,582.67</td><td class="down">−7.9%</td><td><span class="tag bear">Bear</span></td><td>Political transition</td></tr>
+      <tr><td>2018</td><td>1,212.36</td><td class="down">−23.4%</td><td><span class="tag bear">Bear</span></td><td>Credit tightening</td></tr>
+      <tr><td>2019</td><td>1,271.93</td><td class="up">+4.9%</td><td><span class="tag flat">Flat</span></td><td>Slow recovery</td></tr>
+      <tr><td>2020</td><td>2,087.27</td><td class="up">+64.1%</td><td><span class="tag bull">Bull</span></td><td>COVID lockdown rally</td></tr>
+      <tr><td>2021</td><td>2,524.50</td><td class="up">+20.9%</td><td><span class="tag bull">Bull</span></td><td>ATH 3,079 in Jul</td></tr>
+      <tr><td>2022</td><td>2,029.03</td><td class="down">−19.6%</td><td><span class="tag bear">Bear</span></td><td>NRB loan cap → −41.5% peak drop</td></tr>
+      <tr><td>2023</td><td>2,068.90</td><td class="up">+2.0%</td><td><span class="tag flat">Flat</span></td><td>Sideways consolidation</td></tr>
+      <tr><td>2024</td><td>2,576.50</td><td class="up">+24.5%</td><td><span class="tag bull">Bull</span></td><td>Recovery confirmed</td></tr>
+      <tr><td>2025</td><td>2,633.77</td><td class="up">+2.2%</td><td><span class="tag flat">Flat</span></td><td>Slow grind</td></tr>
+      <tr><td>Jan 2026</td><td>2,714.10</td><td class="up">+3.1%</td><td><span class="tag bull">Bull</span></td><td>Current (CEIC)</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ TAB: MODEL GUIDE ══════════ -->
+<div id="tab-models" class="tab-content">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+  <div class="panel">
+    <div class="ptitle" style="color:var(--m)">GBM (Baseline)</div>
+    <div style="font-size:12px;font-family:var(--font-mono);line-height:1.8;color:rgba(148,163,184,.85);">
+      <strong style="color:var(--t)">What it assumes:</strong><br>
+      Returns are normally distributed, volatility is constant, no memory in returns.<br><br>
+      <strong style="color:var(--t)">NEPSE problem:</strong><br>
+      NEPSE has volatility clustering (calm then explosive), fat tails, and confirmed AR(1) autocorrelation. GBM ignores all of this.<br><br>
+      <strong style="color:var(--r)">Use when:</strong> You need a fast baseline comparison.
+    </div>
+  </div>
+  <div class="panel" style="border-color:rgba(79,142,247,.3);">
+    <div class="ptitle">Jump Diffusion (Merton)</div>
+    <div style="font-size:12px;font-family:var(--font-mono);line-height:1.8;color:rgba(148,163,184,.85);">
+      <strong style="color:var(--t)">What it adds:</strong><br>
+      Poisson-distributed sudden jumps on top of GBM diffusion. Models NRB regulatory shocks and political crises.<br><br>
+      <strong style="color:var(--t)">NEPSE calibration:</strong><br>
+      λ=2 jumps/yr, mean jump −8%, based on 2018, 2022 crash patterns.<br><br>
+      <strong style="color:var(--g)">Best for:</strong> Realistic downside tail modeling.
+    </div>
+  </div>
+  <div class="panel" style="border-color:rgba(167,139,250,.3);">
+    <div class="ptitle" style="color:var(--acc3)">GARCH-GBM</div>
+    <div style="font-size:12px;font-family:var(--font-mono);line-height:1.8;color:rgba(148,163,184,.85);">
+      <strong style="color:var(--t)">What it adds:</strong><br>
+      Volatility is no longer constant it clusters and mean-reverts. NRB 2024 research confirms EGARCH best-fit for NEPSE.<br><br>
+      <strong style="color:var(--t)">Effect:</strong><br>
+      After a high-vol period, vol decays toward long-run mean (κ parameter). Produces more realistic path shapes.<br><br>
+      <strong style="color:var(--g)">Best for:</strong> Medium-term (6mo–2yr) volatility forecasting.
+    </div>
+  </div>
+  <div class="panel" style="border-color:rgba(251,191,36,.3);">
+    <div class="ptitle" style="color:var(--y)">Regime Switching</div>
+    <div style="font-size:12px;font-family:var(--font-mono);line-height:1.8;color:rgba(148,163,184,.85);">
+      <strong style="color:var(--t)">What it adds:</strong><br>
+      3 hidden states: Bull (μ=25%, σ=18%), Flat (μ=3%, σ=20%), Bear (μ=−20%, σ=35%). Each day the model can transition between states.<br><br>
+      <strong style="color:var(--t)">NEPSE reality:</strong><br>
+      2016–2021 bull, 2022 bear, 2022–2024 flat are textbook regime shifts.<br><br>
+      <strong style="color:var(--g)">Best for:</strong> Long-term (2–5yr) multi-cycle projections.
+    </div>
+  </div>
+</div>
+<div class="panel" style="margin-top:14px;">
+  <div class="ptitle">What v3 Added vs v2</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div>
+      <div style="font-size:11px;font-family:var(--font-mono);color:var(--m);margin-bottom:10px;letter-spacing:1px;">V2 (PREVIOUS)</div>
+      <div style="font-size:11px;font-family:var(--font-mono);line-height:2;color:rgba(148,163,184,.8);">
+        ✓ Jump diffusion (Merton model)<br>
+        ✓ GARCH vol clustering<br>
+        ✓ Seasonality multipliers<br>
+        ✓ Student-t fat tails<br>
+        ✓ AR(1) autocorrelation<br>
+        ✓ CVaR / VaR<br>
+        ✓ Regime switching<br>
+        ✓ Sharpe ratio
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-family:var(--font-mono);color:var(--g);margin-bottom:10px;letter-spacing:1px;">V3 NEW ADDITIONS</div>
+      <div style="font-size:11px;font-family:var(--font-mono);line-height:2;color:rgba(148,163,184,.8);">
+        ✓ Sortino Ratio (downside risk)<br>
+        ✓ Skewness + Kurtosis metrics<br>
+        ✓ Max Drawdown estimate<br>
+        ✓ Configurable confidence intervals<br>
+        ✓ Adjustable risk-free rate<br>
+        ✓ NPR investment P&L projections<br>
+        ✓ Export: PNG chart image<br>
+        ✓ Export: CSV data table<br>
+        ✓ Export: JSON full results<br>
+        ✓ Export: HTML report
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ TAB: HOW TO USE ══════════ -->
+<div id="tab-howto" class="tab-content">
+
+<div class="panel" style="margin-bottom:14px;">
+  <div class="ptitle">Quick Start Guide</div>
+
+  <div class="how-tip">
+    <strong>What is Monte Carlo Simulation?</strong><br>
+    This tool runs thousands of random simulated futures for the NEPSE index, based on historical data and the parameters you set. Each simulation is one possible future. Together, they show the probability distribution of outcomes — helping you understand risk, not predict the future.
+  </div>
+
+  <div class="step-grid">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-title">Choose a Model</div>
+      <div class="step-desc">Pick one of the 4 simulation models. For most users, Jump Diffusion (Merton) is recommended — it includes sudden shock events like the 2022 NRB policy crash.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-title">Set Core Parameters</div>
+      <div class="step-desc">Set the starting index (default: current NEPSE), number of simulations (more = more accurate, slower), and your time horizon (how far ahead to project).</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-title">Pick a Scenario or Customize</div>
+      <div class="step-desc">Use a preset scenario (Bull Run, Bear Market, NRB Shock) or set custom Drift μ and Volatility σ values. Adjust Advanced Parameters for fine-tuning.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <div class="step-title">Run & Read Results</div>
+      <div class="step-desc">Click Run Simulation. Read the Median (P50), Bull Case (P90), Bear Case (P10), risk metrics, and distribution bar to understand the probability spread.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">5</div>
+      <div class="step-title">Export Your Data</div>
+      <div class="step-desc">After running, use the Export buttons to save the chart as PNG, download simulation data as CSV, get full JSON results, or generate an HTML report.</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom:14px;">
+  <div class="ptitle">Core Parameters Explained</div>
+
+  <div class="how-section">
+    <div class="param-card">
+      <div class="param-name">Starting Index <span class="param-badge badge-core">Core</span></div>
+      <div class="param-desc">The NEPSE index value from which the simulation begins. Defaults to 2,714.10 (January 2026, CEIC data). You can enter any value useful for backtesting or hypothetical scenarios.</div>
+      <div class="param-range">Default: 2,714.10 · Range: 100 – 10,000 · Tip: Use the current live NEPSE value for most accurate projections.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-name">Simulations (N) <span class="param-badge badge-core">Core</span></div>
+      <div class="param-desc">The number of independent random paths to simulate. More simulations produce smoother, more statistically reliable results. However, higher counts take longer to compute. 2,000 is good for quick exploration; 10,000+ for final analysis.</div>
+      <div class="param-range">Default: 2,000 · Range: 200 – 50,000 · Recommended: 5,000–10,000 for reliable stats · Trade-off: Speed vs. accuracy</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-name">Time Horizon <span class="param-badge badge-core">Core</span></div>
+      <div class="param-desc">How many trading days into the future to simulate. NEPSE has approximately 252 trading days per year. The horizon determines how long each simulated path runs.</div>
+      <div class="param-range">Default: 252 days (1 year) · Options: 63d (3mo), 126d (6mo), 252d (1yr), 504d (2yr), up to 1,260d (5yr) · Longer horizons show wider uncertainty bands.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-name">Annual Drift μ <span class="param-badge badge-core">Core</span></div>
+      <div class="param-desc">The expected average annual return of the index, expressed as a percentage. This is the "trend" direction of the simulation. Positive drift means the model expects growth on average; negative drift models a bearish environment. It is derived from the NEPSE CAGR of ~8.69% over 22 years (2003–2025).</div>
+      <div class="param-range">Default: 8.69% (historical CAGR) · Bull: 25–35% · Bear: −20% · Crisis: −40% · Range: −40% to +60%</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-name">Annual Volatility σ <span class="param-badge badge-core">Core</span></div>
+      <div class="param-desc">The annualized standard deviation of daily returns — essentially how "wild" the index swings day to day. Higher volatility produces wider path fans and more extreme outcomes in both directions. NEPSE's EGARCH-estimated σ is ~24%, higher than developed markets due to liquidity, political risk, and NRB policy sensitivity.</div>
+      <div class="param-range">Default: 24% (EGARCH estimate, NRB 2024) · Normal: 18–28% · Crisis peaks: 45–55% · Range: 8% – 65%</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-name">Confidence Interval <span class="param-badge badge-core">Core</span></div>
+      <div class="param-desc">Controls which percentile bands are drawn on the main chart. A 90% CI shows the P5–P95 band, meaning 90% of simulated paths fall within the shaded region. Wider CIs show more of the tail outcomes.</div>
+      <div class="param-range">Options: 80% CI (P10–P90), 90% CI (P5–P95), 95% CI (P2.5–P97.5)</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-name">Scenario Preset <span class="param-badge badge-core">Core</span></div>
+      <div class="param-desc">Quickly loads pre-calibrated μ and σ values based on known NEPSE market regimes. Choose Historical Baseline for the default long-run parameters, or pick scenario-specific presets to model specific environments.</div>
+      <div class="param-range">Presets: Historical (μ8.69%, σ24%) · Bull Run (μ35%, σ18%) · Bear Market (μ−20%, σ32%) · NRB Shock (μ−40%, σ50%) · Post-Crisis Recovery (μ28%, σ28%) · Flat/Sideways (μ3%, σ20%)</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom:14px;">
+  <div class="ptitle">Advanced Parameters Explained</div>
+
+  <div class="param-card">
+    <div class="param-name">Fat Tail ν (Student-t degrees of freedom) <span class="param-badge badge-adv">Advanced</span></div>
+    <div class="param-desc">Controls the "fatness" of the tail of the return distribution. Normal distribution (GBM) assumes no extreme outliers — but real markets have far more crashes and rallies than normal distributions predict. The Student-t distribution with low ν (degrees of freedom) produces fatter tails, modeling NEPSE's tendency for sudden extreme moves. Research on NEPSE (arxiv 2026) finds ν≈4–6 to be most appropriate.</div>
+    <div class="param-range">Default: 5 · Lower = fatter tails (more extreme events) · 30 ≈ Normal distribution · NEPSE range: 4–6</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">Jump Intensity λ (jumps per year) <span class="param-badge badge-adv">Advanced</span></div>
+    <div class="param-desc">In the Jump Diffusion model, λ controls how often sudden discontinuous jumps (shocks) occur. A value of 2 means on average 2 jump events happen per year. Each jump is an abrupt price discontinuity — like the NRB loan cap announcement in 2022 which caused a −41.5% drop. Higher λ = more frequent shocks.</div>
+    <div class="param-range">Default: 2 · Range: 0 (no jumps / pure GBM) to 10 · NEPSE calibration: ~2/yr based on 2018 &amp; 2022 crises</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">Mean Jump Size (jμ) <span class="param-badge badge-adv">Advanced</span></div>
+    <div class="param-desc">The average size of each jump event. Negative values model downward shocks (regulatory crackdowns, political crises). Positive values could model surprise positive announcements. This is the mean of the log-normal jump distribution, so the actual price impact is exp(jμ).</div>
+    <div class="param-range">Default: −8% · Range: −30% to +10% · NRB shock: −20 to −30% · Positive catalyst: +5 to +10%</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">Jump Volatility (jσ) <span class="param-badge badge-adv">Advanced</span></div>
+    <div class="param-desc">The standard deviation of each individual jump size. Higher jσ means jump magnitudes are more unpredictable — sometimes small, sometimes catastrophic. Low jσ means jumps are more consistent in their size.</div>
+    <div class="param-range">Default: 15% · Range: 5% – 40%</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">AR(1) Autocorrelation ρ <span class="param-badge badge-adv">Advanced</span></div>
+    <div class="param-desc">Controls how much today's return influences tomorrow's. A positive ρ (momentum) means good days tend to slightly follow good days. A negative ρ (mean-reversion) means big up days are followed by slight pullbacks. ARIMA studies on NEPSE (Gaire, NRB) confirm a small positive ρ ≈ 0.05, consistent with developing market momentum.</div>
+    <div class="param-range">Default: 0.05 · Range: −0.20 (strong mean-reversion) to +0.30 (momentum) · 0.00 = no autocorrelation</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">Seasonality Boost <span class="param-badge badge-adv">Advanced</span></div>
+    <div class="param-desc">When ON, applies monthly drift adjustments based on 20+ years of NEPSE seasonal patterns. The biggest effect is July (+1.4%/month boost, 93% banking win rate due to fiscal year-end). Turning this OFF runs a seasonally-neutral simulation.</div>
+    <div class="param-range">Default: ON · July multiplier: +1.4%/mo · August: −0.4%/mo (post-FY correction) · February: −0.2%/mo</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">GARCH Mean Reversion κ <span class="param-badge badge-adv">Advanced</span></div>
+    <div class="param-desc">Used in the GARCH-GBM model only. Controls how quickly volatility "calms down" after a high-vol period. Higher κ means vol reverts to its long-run average faster. Lower κ means volatile periods persist longer. EGARCH research on NEPSE suggests κ ≈ 0.10–0.20.</div>
+    <div class="param-range">Default: 0.15 · Range: 0.01 (slow reversion, vol persists) to 0.50 (fast reversion) · NEPSE estimate: 0.10–0.20</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">Risk-Free Rate rf <span class="param-badge badge-adv">Advanced</span></div>
+    <div class="param-desc">The annual risk-free rate used to compute the Sharpe and Sortino ratios. In Nepal, this approximates the NRB base rate or short-term treasury bill rate. The Sharpe ratio = (simulated return − rf) / volatility of simulated returns.</div>
+    <div class="param-range">Default: 4% (NRB base rate proxy) · Range: 0% – 12% · Use the current NRB policy rate for most accurate Sharpe estimates</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">Investment Amount (NPR) <span class="param-badge badge-adv">Advanced</span></div>
+    <div class="param-desc">Optional. Enter your investment in Nepali Rupees proportional to an index position. The simulator will calculate P&L projections (Bear, Median, Bull scenarios) in NPR terms after the simulation completes, showing expected profit and loss in absolute rupee values.</div>
+    <div class="param-range">Optional · Example: 100,000 NPR · Results show NPR value at P10/P50/P90 index levels · Leave blank to skip</div>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom:14px;">
+  <div class="ptitle">Reading the Results</div>
+
+  <div class="param-card">
+    <div class="param-name">Chart: Percentile Bands</div>
+    <div class="param-desc">The main chart shows hundreds of individual simulated paths (colored by outcome: red = loss, green = gain) and overlays percentile bands. The cyan line is the median (P50) — half the simulations ended above this, half below. Green bands show optimistic outcomes; red bands show downside risk.</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">P10 / P50 / P90 — What They Mean</div>
+    <div class="param-desc">P10 (Bear Case) = 10% of simulations ended at or below this value. This is your downside scenario to plan for. P50 (Median) = the middle outcome — equally likely to be above or below. P90 (Bull Case) = only 10% of simulations ended above this — this is the optimistic tail.</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">VaR 95% — Value at Risk</div>
+    <div class="param-desc">The maximum expected loss with 95% confidence over the simulation period. If VaR 95% = −500 pts, then 95% of simulations ended with a loss no worse than −500 pts. Only 5% of simulations produced worse losses.</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">CVaR 95% — Conditional Value at Risk (Expected Shortfall)</div>
+    <div class="param-desc">The average loss of the worst 5% of scenarios. CVaR is stricter than VaR — it tells you what you'd typically lose if you end up in the bad tail. CVaR ≥ VaR always. For risk management, CVaR is the more important metric.</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">Sharpe Ratio</div>
+    <div class="param-desc">Measures risk-adjusted return: (annualized return − risk-free rate) ÷ return volatility. Sharpe > 1 = good risk-adjusted performance. Sharpe < 0 = expected return is below the risk-free rate. Use this to compare model configurations, not as a trading signal.</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">Sortino Ratio</div>
+    <div class="param-desc">Like Sharpe, but only penalizes downside volatility (losses), not upside volatility. More relevant for asymmetric assets like equities. Higher Sortino = better downside-adjusted return. Sortino > Sharpe means most volatility is upside (positive).</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">Skewness & Kurtosis</div>
+    <div class="param-desc">Skewness measures asymmetry of the outcome distribution. Negative skewness = left tail is longer (more extreme losses than gains). Positive = right tail longer (extreme gains possible). Kurtosis measures tail heaviness — excess kurtosis > 0 means more extreme outcomes than a normal distribution would produce.</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">Max Drawdown (Estimated)</div>
+    <div class="param-desc">The average of the worst single-path drawdown across all simulations — from peak to trough. Gives a sense of the worst sustained loss within a path, not just the final outcome. Important for investors who cannot tolerate large interim losses even if they recover.</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="ptitle">Export Features</div>
+
+  <div class="param-card">
+    <div class="param-name">🖼 Export Chart PNG</div>
+    <div class="param-desc">Saves the main simulated price paths chart as a PNG image. Useful for presentations, reports, or sharing on social media. The export includes the full canvas with all percentile bands and path colors.</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">📊 Export Data CSV</div>
+    <div class="param-desc">Downloads a CSV file with all simulation statistics: median, mean, P10, P90, VaR, CVaR, Sharpe, Sortino, Skewness, Kurtosis, distribution band percentages, and all input parameters used for the run. Open in Excel or Google Sheets for further analysis.</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">📋 Export JSON</div>
+    <div class="param-desc">Exports the complete simulation result as a structured JSON object — including all parameters, all computed statistics, and the full array of final simulated prices. Useful for developers, Python/R integration, or saving simulation state.</div>
+  </div>
+
+  <div class="param-card">
+    <div class="param-name">📄 Export HTML Report</div>
+    <div class="param-desc">Generates a standalone, self-contained HTML report with all statistics, the distribution breakdown, risk metrics, and the simulation parameters embedded. Can be opened in any browser, shared via email, or archived as a snapshot of your analysis.</div>
+  </div>
+
+  <div class="how-warning">
+    ⚠ <strong>Important:</strong> Export buttons are only active after a simulation has been run. Run the simulation first, then use any export option. The PNG export captures the chart canvas; ensure your browser allows downloads.
+  </div>
+</div>
+
+</div><!-- /tab-howto -->
+
+</div><!-- /wrap -->
+
+<script>
+// ══════════════════════════════════════════
+//  NEPSE MONTE CARLO v3 — ENGINE
+// ══════════════════════════════════════════
+
+const SEASONALITY = {
+  1:  0.003,  // Jan
+  2: -0.002,  // Feb
+  3:  0.001,  // Mar
+  4:  0.003,  // Apr
+  5:  0.001,  // May
+  6: -0.001,  // Jun
+  7:  0.014,  // Jul ★
+  8: -0.004,  // Aug
+  9:  0.001,  // Sep
+  10: 0.002,  // Oct
+  11: 0.001,  // Nov
+  12: 0.002,  // Dec
+};
+
+const REGIMES = {
+  bull: {mu:0.25/252, sig:0.18/Math.sqrt(252), trans:[0.985, 0.010, 0.005]},
+  flat: {mu:0.03/252, sig:0.20/Math.sqrt(252), trans:[0.010, 0.978, 0.012]},
+  bear: {mu:-0.20/252, sig:0.35/Math.sqrt(252), trans:[0.015, 0.020, 0.965]},
+};
+const REGIME_KEYS = ['bull','flat','bear'];
+
+const MODEL_DESC = {
+  gbm:    '<strong>Standard GBM (Baseline)</strong><br>Classic Geometric Brownian Motion. Returns are normally distributed, volatility constant. Fast but blind to NEPSE\'s fat tails and shock events.',
+  jd:     '<strong>Jump Diffusion (Merton, 1976)</strong><br>GBM + Poisson jump process. Captures sudden NRB policy shocks (e.g. 2022 loan cap → −41%). Jump intensity λ=2/yr, mean jump −8%, volatility 15%.',
+  garch:  '<strong>GARCH-GBM (Volatility Clustering)</strong><br>Volatility is no longer constant. It clusters (high-vol follows high-vol) and mean-reverts. EGARCH confirmed best-fit for NEPSE by NRB 2024 research.',
+  regime: '<strong>Regime Switching (Hidden Markov)</strong><br>3 states: Bull (μ=25%), Flat (μ=3%), Bear (μ=−20%). Each day transitions probabilistically. Matches NEPSE\'s clear multi-year cycles.',
+};
+
+let activeModel = 'jd';
+let lastFinals = [], lastS0 = 2714.10;
+let lastStats = null;
+let lastParams = null;
+const mainC = document.getElementById('mainC');
+const ctx   = mainC.getContext('2d');
+const histC = document.getElementById('histC');
+const hctx  = histC.getContext('2d');
+
+// ── UTILS ──
+function randn() {
+  let u=0,v=0;
+  while(!u) u=Math.random();
+  while(!v) v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+function randt(nu) {
+  const z = randn();
+  let chi2 = 0;
+  for(let i=0;i<nu;i++){const x=randn(); chi2+=x*x;}
+  return z / Math.sqrt(chi2/nu);
+}
+function poisson(lam) {
+  let L=Math.exp(-lam), k=0, p=1;
+  do{k++;p*=Math.random();}while(p>L);
+  return k-1;
+}
+function pct(arr,p){
+  const s=[...arr].sort((a,b)=>a-b);
+  return s[Math.floor(p/100*(s.length-1))];
+}
+function mean(arr){return arr.reduce((a,b)=>a+b,0)/arr.length;}
+function std(arr){const m=mean(arr); return Math.sqrt(arr.reduce((s,x)=>s+(x-m)**2,0)/arr.length);}
+function skew(arr){
+  const m=mean(arr),s=std(arr);
+  if(s===0) return 0;
+  return arr.reduce((a,x)=>a+((x-m)/s)**3,0)/arr.length;
+}
+function kurt(arr){
+  const m=mean(arr),s=std(arr);
+  if(s===0) return 0;
+  return arr.reduce((a,x)=>a+((x-m)/s)**4,0)/arr.length - 3;
+}
+function fmt(v){return Math.round(v).toLocaleString();}
+function fmtP(v,s0){return ((v/s0-1)*100).toFixed(1)+'%';}
+
+function showToast(msg, color='var(--g)'){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = color;
+  t.style.color = color;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// ── MODELS ──
+function gbmStep(prev, mu_d, sig_d, nu, rho, prevR) {
+  const noise = nu<30 ? sig_d*randt(nu) : sig_d*randn();
+  const r = (1-rho)*mu_d + rho*prevR + noise;
+  return {price: prev*Math.exp(r), ret: r};
+}
+function jdStep(prev, mu_d, sig_d, nu, rho, prevR, lam_d, jmu, jsig) {
+  const noise = nu<30 ? sig_d*randt(nu) : sig_d*randn();
+  const r_diff = (1-rho)*mu_d + rho*prevR + noise;
+  const nJumps = poisson(lam_d);
+  let jumpTotal = 0;
+  for(let j=0;j<nJumps;j++) jumpTotal += jmu + jsig*randn();
+  const r = r_diff + jumpTotal;
+  return {price: prev*Math.exp(r), ret: r};
+}
+function garchStep(prev, mu_d, baseSig, nu, rho, prevR, prevVar, kappa) {
+  const omega = kappa * baseSig*baseSig;
+  const alpha = 0.1, beta = 1-kappa-alpha;
+  const curVar = Math.max(omega + alpha*prevR*prevR + beta*prevVar, 1e-8);
+  const curSig = Math.sqrt(curVar);
+  const noise = nu<30 ? curSig*randt(nu) : curSig*randn();
+  const r = mu_d + rho*prevR + noise;
+  return {price: prev*Math.exp(r), ret: r, variance: curVar};
+}
+
+function simulate(S0, N, T, params) {
+  const {mu, sigma, nu, lambda, jmu_pct, jsig_pct, rho, seasonality, kappa} = params;
+  const mu_d    = mu / 100 / 252;
+  const sig_d   = sigma / 100 / Math.sqrt(252);
+  const lam_d   = lambda / 252;
+  const jmu_d   = Math.log(1 + jmu_pct/100);
+  const jsig_d  = jsig_pct / 100;
+  const startDate = new Date(2026, 0, 1);
+
+  const paths = [];
+  for(let n=0; n<N; n++){
+    const path = new Float32Array(T+1);
+    path[0] = S0;
+    let prevR = 0;
+    let prevVar = sig_d*sig_d;
+    let regime = 1;
+
+    for(let t=1; t<=T; t++){
+      const d = new Date(startDate.getTime() + t*24*3600*1000);
+      const month = d.getMonth()+1;
+      const seasBoost = seasonality ? (SEASONALITY[month]||0)/252 : 0;
+
+      let eff_mu = mu_d + seasBoost;
+      let step;
+
+      if(activeModel === 'gbm'){
+        step = gbmStep(path[t-1], eff_mu, sig_d, nu, rho, prevR);
+      } else if(activeModel === 'jd'){
+        step = jdStep(path[t-1], eff_mu, sig_d, nu, rho, prevR, lam_d, jmu_d, jsig_d);
+      } else if(activeModel === 'garch'){
+        step = garchStep(path[t-1], eff_mu, sig_d, nu, rho, prevR, prevVar, kappa);
+        prevVar = step.variance;
+      } else if(activeModel === 'regime'){
+        const reg = REGIMES[REGIME_KEYS[regime]];
+        const r = Math.random();
+        let cum = 0;
+        for(let i=0;i<3;i++){cum+=reg.trans[i]; if(r<cum){regime=i;break;}}
+        const rr = REGIMES[REGIME_KEYS[regime]];
+        const noise = nu<30 ? rr.sig*randt(nu) : rr.sig*randn();
+        const ret = rr.mu + seasBoost + rho*prevR + noise;
+        step = {price: path[t-1]*Math.exp(ret), ret};
+      }
+      path[t] = Math.max(step.price, S0*0.01);
+      prevR = step.ret;
+    }
+    paths.push(path);
+  }
+  return paths;
+}
+
+// ── DRAW MAIN CHART ──
+function drawChart(paths, S0, T){
+  const dpr = window.devicePixelRatio || 1;
+  const cw = mainC.parentElement.offsetWidth || 700;
+  const ch = 380;
+  mainC.width  = cw*dpr; mainC.height = ch*dpr;
+  mainC.style.width=cw+'px'; mainC.style.height=ch+'px';
+  ctx.scale(dpr,dpr);
+  const w=cw, h=ch;
+  const pad={l:58,r:16,t:18,b:44};
+
+  ctx.clearRect(0,0,w,h);
+
+  let minV=Infinity, maxV=-Infinity;
+  for(const p of paths) for(let t=0;t<=T;t++){if(p[t]<minV)minV=p[t];if(p[t]>maxV)maxV=p[t];}
+  const rng=maxV-minV||1;
+  const sy=v=>pad.t+(1-(v-minV)/rng)*(h-pad.t-pad.b);
+  const sx=t=>pad.l+(t/T)*(w-pad.l-pad.r);
+
+  for(let i=0;i<=5;i++){
+    const y=pad.t+i*(h-pad.t-pad.b)/5;
+    ctx.strokeStyle='rgba(26,32,53,0.7)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();
+    const v=maxV-(i/5)*rng;
+    ctx.fillStyle='rgba(100,116,139,0.65)';ctx.font='9px Space Mono';
+    ctx.fillText(Math.round(v).toLocaleString(),4,y+3);
+  }
+
+  const step=Math.max(1,Math.floor(paths.length/400));
+  for(let n=0;n<paths.length;n+=step){
+    const final=paths[n][T];
+    let col;
+    if(final<S0*.65) col='rgba(244,63,94,0.14)';
+    else if(final<S0) col='rgba(244,63,94,0.07)';
+    else if(final<S0*1.25) col='rgba(45,58,82,0.09)';
+    else if(final<S0*1.6) col='rgba(34,197,94,0.08)';
+    else col='rgba(34,197,94,0.15)';
+    ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=0.7;
+    ctx.moveTo(sx(0),sy(paths[n][0]));
+    const ts=Math.max(1,Math.floor(T/100));
+    for(let t=ts;t<=T;t+=ts) ctx.lineTo(sx(t),sy(paths[n][t]));
+    ctx.stroke();
+  }
+
+  // CI level-aware bands
+  const ciSel = document.getElementById('ci-level').value;
+  let bands;
+  if(ciSel==='80%'){
+    bands=[
+      {p:10, color:'rgba(244,63,94,0.85)', lw:1.5,dash:[4,3]},
+      {p:50, color:'rgba(34,211,238,1)',   lw:2.5,dash:[]},
+      {p:90, color:'rgba(34,197,94,0.85)', lw:1.5,dash:[4,3]},
+    ];
+  } else if(ciSel==='95%'){
+    bands=[
+      {p:2.5,color:'rgba(244,63,94,0.4)',  lw:1,  dash:[2,4]},
+      {p:5,  color:'rgba(244,63,94,0.85)', lw:1.5,dash:[4,3]},
+      {p:50, color:'rgba(34,211,238,1)',   lw:2.5,dash:[]},
+      {p:95, color:'rgba(34,197,94,0.85)', lw:1.5,dash:[4,3]},
+      {p:97.5,color:'rgba(34,197,94,0.4)', lw:1,  dash:[2,4]},
+    ];
+  } else {
+    bands=[
+      {p:5,  color:'rgba(244,63,94,0.5)',  lw:1,  dash:[3,3]},
+      {p:10, color:'rgba(244,63,94,0.85)', lw:1.5,dash:[4,3]},
+      {p:50, color:'rgba(34,211,238,1)',   lw:2.5,dash:[]},
+      {p:90, color:'rgba(34,197,94,0.85)', lw:1.5,dash:[4,3]},
+      {p:95, color:'rgba(34,197,94,0.5)',  lw:1,  dash:[3,3]},
+    ];
+  }
+
+  const ts2=Math.max(1,Math.floor(T/80));
+  for(const b of bands){
+    const bp=[];
+    for(let t=0;t<=T;t+=ts2) bp.push({t, v:pct(paths.map(p=>p[t]),b.p)});
+    ctx.beginPath();ctx.strokeStyle=b.color;ctx.lineWidth=b.lw;ctx.setLineDash(b.dash);
+    ctx.moveTo(sx(bp[0].t),sy(bp[0].v));
+    for(let i=1;i<bp.length;i++) ctx.lineTo(sx(bp[i].t),sy(bp[i].v));
+    ctx.stroke();ctx.setLineDash([]);
+  }
+
+  ctx.beginPath();ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;ctx.setLineDash([2,4]);
+  ctx.moveTo(sx(0),sy(S0));ctx.lineTo(sx(T),sy(S0));ctx.stroke();ctx.setLineDash([]);
+
+  const marks=[0,63,126,189,252,315,378,441,504,630,756,1008,1260].filter(t=>t<=T);
+  ctx.fillStyle='rgba(100,116,139,0.65)';ctx.font='9px Space Mono';
+  for(const t of marks){
+    const x=sx(t);
+    ctx.fillText(t===0?'Now':`${Math.round(t/252*12)}mo`,x-12,h-pad.b+14);
+  }
+
+  const leg=[
+    {c:'rgba(34,197,94,.85)', l:'Bull Band'},
+    {c:'rgba(34,211,238,1)',  l:'P50 Median'},
+    {c:'rgba(244,63,94,.85)',l:'Bear Band'},
+  ];
+  let lx=pad.l;
+  for(const l of leg){
+    ctx.strokeStyle=l.c;ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(lx,h-8);ctx.lineTo(lx+18,h-8);ctx.stroke();
+    ctx.fillStyle='rgba(148,163,184,.75)';ctx.font='9px Space Mono';
+    ctx.fillText(l.l,lx+22,h-5);lx+=110;
+  }
+}
+
+// ── HISTOGRAM ──
+function drawHist(finals, S0){
+  const dpr=window.devicePixelRatio||1;
+  const cw=histC.parentElement.offsetWidth||700;
+  const ch=150;
+  histC.width=cw*dpr;histC.height=ch*dpr;
+  histC.style.width=cw+'px';histC.style.height=ch+'px';
+  hctx.scale(dpr,dpr);
+  const w=cw,h=ch,pad={l:42,r:12,t:10,b:28};
+  hctx.clearRect(0,0,w,h);
+
+  const minF=Math.min(...finals), maxF=Math.max(...finals);
+  const bins=70, bw=(maxF-minF)/bins;
+  const counts=new Array(bins).fill(0);
+  for(const f of finals){const b=Math.min(bins-1,Math.floor((f-minF)/bw));counts[b]++;}
+  const maxC=Math.max(...counts);
+  const bpx=(w-pad.l-pad.r)/bins;
+
+  for(let i=0;i<bins;i++){
+    const x=pad.l+i*bpx;
+    const bh=((counts[i]/maxC)*(h-pad.t-pad.b));
+    const y=h-pad.b-bh;
+    const bv=minF+(i+0.5)*bw;
+    let col;
+    if(bv<S0*.65) col='#7f1d1d';
+    else if(bv<S0*.9) col='#be123c';
+    else if(bv<S0*1.1) col='#2d3a52';
+    else if(bv<S0*1.5) col='#166534';
+    else col='#15803d';
+    hctx.fillStyle=col;
+    hctx.fillRect(x,y,Math.max(bpx-0.5,1),bh);
+  }
+
+  const m=mean(finals), md=pct(finals,50);
+  for(const [val,col,lbl] of [[m,'rgba(34,211,238,.8)','MEAN'],[md,'rgba(167,139,250,.8)','MED']]){
+    const x=pad.l+((val-minF)/(maxF-minF))*(w-pad.l-pad.r);
+    hctx.beginPath();hctx.strokeStyle=col;hctx.lineWidth=1.5;hctx.setLineDash([3,3]);
+    hctx.moveTo(x,pad.t);hctx.lineTo(x,h-pad.b);hctx.stroke();hctx.setLineDash([]);
+    hctx.fillStyle=col;hctx.font='8px Space Mono';hctx.fillText(lbl,x-8,pad.t+8);
+  }
+
+  hctx.fillStyle='rgba(100,116,139,.65)';hctx.font='9px Space Mono';
+  for(let i=0;i<=4;i++){
+    const v=minF+(i/4)*(maxF-minF);
+    const x=pad.l+(i/4)*(w-pad.l-pad.r);
+    hctx.fillText(Math.round(v).toLocaleString(),x-14,h-pad.b+12);
+  }
+}
+
+// ── SEASONALITY CHART ──
+function buildSeasonalityChart(){
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const winRates=[62,42,55,60,53,48,93,38,55,63,57,60];
+  const avgReturns=[1.2,-0.8,0.5,1.4,0.3,-0.3,3.8,-1.5,0.4,1.8,0.6,1.0];
+  const c=document.getElementById('seas-chart');
+  c.innerHTML='';
+  months.forEach((m,i)=>{
+    const wr=winRates[i]; const ar=avgReturns[i];
+    const intensity=Math.abs(ar)/3.8;
+    const bg=ar>0?`rgba(34,197,94,${0.08+intensity*.25})`:`rgba(244,63,94,${0.08+intensity*.25})`;
+    const border=ar>0?`rgba(34,197,94,${0.2+intensity*.4})`:`rgba(244,63,94,${0.2+intensity*.4})`;
+    const div=document.createElement('div');
+    div.className='seas-cell';
+    div.style.background=bg;
+    div.style.border=`1px solid ${border}`;
+    div.innerHTML=`<div class="m">${m}</div><div class="v" style="color:${ar>0?'#22c55e':'#f43f5e'}">${ar>0?'+':''}${ar}%</div><div class="m">${wr}%</div>`;
+    div.title=`${m}: Avg return ${ar>0?'+':''}${ar}%, Win rate ${wr}%`;
+    c.appendChild(div);
+  });
+}
+
+// ── UI HELPERS ──
+function setModel(m){
+  activeModel=m;
+  ['gbm','jd','garch','regime'].forEach(k=>{
+    document.getElementById('m-'+k).classList.toggle('sel',k===m);
+  });
+  document.getElementById('model-desc').innerHTML=MODEL_DESC[m];
+  const tags={gbm:'GBM BASELINE',jd:'JUMP DIFFUSION',garch:'GARCH-GBM',regime:'REGIME SWITCH'};
+  document.getElementById('model-tag-display').textContent=tags[m];
+}
+function applyScenario(v){
+  const presets={
+    hist:{mu:8.69,sig:24}, bull:{mu:35,sig:18}, bear:{mu:-20,sig:32},
+    nrb:{mu:-40,sig:50}, rec:{mu:28,sig:28}, flat:{mu:3,sig:20}
+  };
+  if(!presets[v]) return;
+  const p=presets[v];
+  document.getElementById('drift').value=p.mu;
+  document.getElementById('lbl-drift').textContent=p.mu+'%';
+  document.getElementById('sigma').value=p.sig;
+  document.getElementById('lbl-sig').textContent=p.sig+'%';
+  document.getElementById('vol-kpi').textContent='~'+p.sig+'%';
+}
+function updateDaysLabel(v){
+  const d=parseInt(v), yrs=d/252;
+  document.getElementById('lbl-days').textContent=yrs<1?`${d}d (~${Math.round(yrs*12)}mo)`:`${d}d (${yrs.toFixed(1)}yr)`;
+}
+function toggleAdv(btn){
+  const body=document.getElementById('adv-body');
+  const open=body.classList.toggle('open');
+  document.getElementById('adv-arrow').textContent=open?'▲':'▼';
+}
+function switchTab(name, btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ── MAIN RUNNER ──
+async function runSim(){
+  const btn=document.getElementById('run-btn');
+  const lov=document.getElementById('loading');
+  const prog=document.getElementById('progress');
+  const ltxt=document.getElementById('load-txt');
+  btn.disabled=true; btn.textContent='⟳ Simulating...';
+  lov.classList.add('on'); prog.style.width='0%';
+
+  await new Promise(r=>setTimeout(r,30));
+
+  const S0     = parseFloat(document.getElementById('start').value)||2714.10;
+  const N      = parseInt(document.getElementById('sims').value);
+  const T      = parseInt(document.getElementById('days').value);
+  const mu     = parseFloat(document.getElementById('drift').value);
+  const sigma  = parseFloat(document.getElementById('sigma').value);
+  const nu     = parseInt(document.getElementById('nu').value);
+  const lambda = parseFloat(document.getElementById('lambda').value);
+  const jmu    = parseFloat(document.getElementById('jmu').value);
+  const jsig   = parseFloat(document.getElementById('jsig').value);
+  const rho    = parseFloat(document.getElementById('rho').value);
+  const seas   = parseInt(document.getElementById('seas').value);
+  const kappa  = parseFloat(document.getElementById('kappa').value);
+  const rfRate = parseFloat(document.getElementById('rf-rate').value)/100;
+  const investAmt = parseFloat(document.getElementById('invest-amt').value)||0;
+
+  lastS0 = S0;
+  lastParams = {S0,N,T,mu,sigma,nu,lambda,jmu,jsig,rho,seas,kappa,rfRate,investAmt,model:activeModel};
+
+  const params={mu,sigma,nu,lambda,jmu_pct:jmu,jsig_pct:jsig,rho,seasonality:seas,kappa};
+  const chunkSz=Math.max(100,Math.floor(N/12));
+  const allPaths=[];
+
+  for(let i=0;i<N;i+=chunkSz){
+    ltxt.textContent=`Running ${i.toLocaleString()} / ${N.toLocaleString()} paths...`;
+    const chunk=Math.min(chunkSz,N-i);
+    const p=simulate(S0,chunk,T,params);
+    allPaths.push(...p);
+    prog.style.width=Math.round(((i+chunk)/N)*80)+'%';
+    await new Promise(r=>setTimeout(r,4));
+  }
+
+  ltxt.textContent='Drawing chart...';
+  prog.style.width='88%';
+  await new Promise(r=>setTimeout(r,20));
+
+  const finals=allPaths.map(p=>p[T]);
+  lastFinals=finals;
+
+  drawChart(allPaths,S0,T);
+  drawHist(finals,S0);
+
+  // ── STATS ──
+  const mn   = mean(finals);
+  const med  = pct(finals,50);
+  const p10  = pct(finals,10);
+  const p90  = pct(finals,90);
+  const maxF = Math.max(...finals);
+  const minF = Math.min(...finals);
+
+  const set=(id,v,s0)=>{
+    document.getElementById(id).textContent=fmt(v);
+    document.getElementById(id).className='rv '+(v>s0?'up':'down');
+  };
+  const setp=(id,v,s0)=>document.getElementById(id).textContent=fmtP(v,s0);
+
+  set('r-mean',mn,S0); setp('r-mean-p',mn,S0);
+  document.getElementById('r-mean').className='rv '+(mn>S0?'up':'down');
+  set('r-med',med,S0); setp('r-med-p',med,S0);
+  document.getElementById('r-p90').textContent=fmt(p90);
+  document.getElementById('r-p90-p').textContent=fmtP(p90,S0);
+  document.getElementById('r-p10').textContent=fmt(p10);
+  document.getElementById('r-p10-p').textContent=fmtP(p10,S0);
+  document.getElementById('r-max').textContent=fmt(maxF);
+  document.getElementById('r-max-p').textContent=fmtP(maxF,S0);
+  document.getElementById('r-min').textContent=fmt(minF);
+  document.getElementById('r-min-p').textContent=fmtP(minF,S0);
+
+  // VaR 95%
+  const p5val=pct(finals,5);
+  const var95=S0-p5val;
+  document.getElementById('var95').textContent=`−${fmt(var95)} (${((var95/S0)*100).toFixed(1)}%)`;
+
+  // CVaR 95%
+  const worstFinals=finals.filter(f=>f<=p5val);
+  const cvarVal = worstFinals.length>0 ? S0-mean(worstFinals) : var95;
+  document.getElementById('cvar95').textContent=`−${fmt(cvarVal)} (${((cvarVal/S0)*100).toFixed(1)}%)`;
+
+  // Prob profit
+  const pp=finals.filter(f=>f>S0).length/finals.length;
+  document.getElementById('prob-p').textContent=(pp*100).toFixed(1)+'%';
+
+  // Sharpe
+  const logRets=finals.map(f=>Math.log(f/S0)/(T/252));
+  const retAnn=mean(logRets);
+  const volAnn=std(logRets);
+  const sharpe=volAnn>0?((retAnn-rfRate)/volAnn).toFixed(2):'—';
+  document.getElementById('sharpe').textContent=sharpe;
+
+  // Sortino
+  const downRets=logRets.filter(r=>r<rfRate);
+  const downVol=downRets.length>1?Math.sqrt(downRets.reduce((s,r)=>s+(r-rfRate)**2,0)/downRets.length):0;
+  const sortino=downVol>0?((retAnn-rfRate)/downVol).toFixed(2):'—';
+  document.getElementById('sortino').textContent=sortino;
+
+  // Max drawdown (avg across sample of paths)
+  const ddSample=allPaths.slice(0,Math.min(500,allPaths.length));
+  let totalDD=0;
+  for(const path of ddSample){
+    let peak=path[0], maxDD=0;
+    for(let t=1;t<=T;t++){
+      if(path[t]>peak) peak=path[t];
+      const dd=(peak-path[t])/peak;
+      if(dd>maxDD) maxDD=dd;
+    }
+    totalDD+=maxDD;
+  }
+  const avgDD=(totalDD/ddSample.length*100).toFixed(1);
+  document.getElementById('max-dd').textContent=`−${avgDD}%`;
+
+  // Skewness & Kurtosis
+  const sk=skew(finals).toFixed(2);
+  const ex=kurt(finals).toFixed(2);
+  document.getElementById('skewness').textContent=sk;
+  document.getElementById('kurtosis').textContent=ex;
+
+  // Distribution bar
+  const ds=[
+    {id:'d-l2',test:f=>f<S0*.7,  label:'−30%+'},
+    {id:'d-l1',test:f=>f>=S0*.7&&f<S0*.9, label:'−10~30'},
+    {id:'d-fl',test:f=>f>=S0*.9&&f<S0*1.1,label:'±10%'},
+    {id:'d-g1',test:f=>f>=S0*1.1&&f<S0*1.5,label:'+10~50'},
+    {id:'d-g2',test:f=>f>=S0*1.5, label:'+50%+'},
+  ];
+  const distPcts={};
+  for(const d of ds){
+    const frac=finals.filter(d.test).length/finals.length;
+    distPcts[d.id]=frac;
+    const w=Math.max(4,Math.round(frac*100));
+    const el=document.getElementById(d.id);
+    el.style.width=w+'%';
+    el.textContent=w>8?d.label:'';
+  }
+
+  // NPR P&L
+  if(investAmt>0){
+    const pnlRows=document.getElementById('pnl-rows');
+    const scenarios=[
+      {name:'Bear (P10)',idx:p10,cls:'down'},
+      {name:'Median (P50)',idx:med,cls:'neu'},
+      {name:'Mean (Exp.)',idx:mn,cls:mn>S0?'up':'down'},
+      {name:'Bull (P90)',idx:p90,cls:'up'},
+    ];
+    pnlRows.innerHTML=scenarios.map(s=>{
+      const mult=s.idx/S0;
+      const val=(investAmt*mult).toFixed(0);
+      const pnl=((investAmt*mult)-investAmt).toFixed(0);
+      const pnlSign=pnl>=0?'+':'';
+      return `<tr>
+        <td>${s.name}</td>
+        <td class="${s.cls}">${fmt(s.idx)}</td>
+        <td class="${s.cls}">${((mult-1)*100).toFixed(1)}%</td>
+        <td>NPR ${Number(val).toLocaleString()}</td>
+        <td class="${s.cls}">${pnlSign}NPR ${Number(Math.abs(pnl)).toLocaleString()}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('pnl-section').style.display='block';
+  } else {
+    document.getElementById('pnl-section').style.display='none';
+  }
+
+  // Store stats for export
+  lastStats = {
+    model:activeModel, simulations:N, horizon_days:T,
+    start_index:S0,
+    mean:mn.toFixed(2), median:med.toFixed(2),
+    p10:p10.toFixed(2), p90:p90.toFixed(2),
+    max:maxF.toFixed(2), min:minF.toFixed(2),
+    var95:var95.toFixed(2), cvar95:cvarVal.toFixed(2),
+    prob_profit:((pp*100).toFixed(1))+'%',
+    sharpe, sortino,
+    avg_max_drawdown:'-'+avgDD+'%',
+    skewness:sk, excess_kurtosis:ex,
+    dist_crash:(distPcts['d-l2']*100).toFixed(1)+'%',
+    dist_bear:(distPcts['d-l1']*100).toFixed(1)+'%',
+    dist_flat:(distPcts['d-fl']*100).toFixed(1)+'%',
+    dist_bull:(distPcts['d-g1']*100).toFixed(1)+'%',
+    dist_rocket:(distPcts['d-g2']*100).toFixed(1)+'%',
+  };
+
+  prog.style.width='100%';
+  await new Promise(r=>setTimeout(r,200));
+
+  lov.classList.remove('on');
+  document.getElementById('results').style.display='block';
+  btn.disabled=false; btn.textContent='▶ Run Again';
+  prog.style.width='0%';
+}
+
+// ══ EXPORT FUNCTIONS ══
+
+function exportChartPNG(){
+  if(!lastFinals.length){ showToast('Run simulation first!','var(--r)'); return; }
+  const link=document.createElement('a');
+  link.download=`nepse-montecarlo-chart-${Date.now()}.png`;
+  // Compose chart + histogram into one image
+  const combined=document.createElement('canvas');
+  const scale=window.devicePixelRatio||1;
+  const mainW=mainC.width/scale, mainH=mainC.height/scale;
+  const histW=histC.width/scale, histH=histC.height/scale;
+  combined.width=(Math.max(mainW,histW))*scale;
+  combined.height=(mainH+histH+20)*scale;
+  combined.style.width=Math.max(mainW,histW)+'px';
+  combined.style.height=(mainH+histH+20)+'px';
+  const cc=combined.getContext('2d');
+  cc.scale(scale,scale);
+  cc.fillStyle='#08090f';
+  cc.fillRect(0,0,combined.width/scale,combined.height/scale);
+  // Draw title
+  cc.fillStyle='#e2e8f0';
+  cc.font='bold 14px Syne, sans-serif';
+  cc.fillText('NEPSE Monte Carlo Simulation — v3',12,18);
+  cc.fillStyle='#64748b';
+  cc.font='10px Space Mono, monospace';
+  cc.fillText(`Model: ${activeModel.toUpperCase()} | N=${lastParams.N.toLocaleString()} | T=${lastParams.T}d | μ=${lastParams.mu}% | σ=${lastParams.sigma}% | Generated: ${new Date().toLocaleDateString()}`,12,34);
+  // Draw canvases
+  cc.drawImage(mainC,0,40,mainW,mainH);
+  cc.drawImage(histC,0,mainH+50,histW,histH);
+  combined.toBlob(blob=>{
+    link.href=URL.createObjectURL(blob);
+    link.click();
+    showToast('✓ Chart exported as PNG');
+  },'image/png');
+}
+
+function exportCSV(){
+  if(!lastStats){ showToast('Run simulation first!','var(--r)'); return; }
+  const rows=[
+    ['NEPSE Monte Carlo v3 — Simulation Results'],
+    ['Generated', new Date().toLocaleString()],
+    [''],
+    ['=== PARAMETERS ==='],
+    ['Model', lastParams.model],
+    ['Starting Index', lastParams.S0],
+    ['Simulations (N)', lastParams.N],
+    ['Time Horizon (days)', lastParams.T],
+    ['Annual Drift μ (%)', lastParams.mu],
+    ['Annual Volatility σ (%)', lastParams.sigma],
+    ['Student-t ν', lastParams.nu],
+    ['Jump Intensity λ', lastParams.lambda],
+    ['Mean Jump Size (%)', lastParams.jmu],
+    ['Jump Volatility (%)', lastParams.jsig],
+    ['AR(1) Autocorrelation ρ', lastParams.rho],
+    ['Seasonality', lastParams.seas?'ON':'OFF'],
+    ['GARCH κ', lastParams.kappa],
+    ['Risk-Free Rate (%)', (lastParams.rfRate*100).toFixed(1)],
+    [''],
+    ['=== RESULTS ==='],
+    ['Metric', 'Value'],
+    ['Expected Mean', lastStats.mean],
+    ['Median (P50)', lastStats.median],
+    ['Bear Case (P10)', lastStats.p10],
+    ['Bull Case (P90)', lastStats.p90],
+    ['Maximum Simulated', lastStats.max],
+    ['Minimum Simulated', lastStats.min],
+    ['VaR 95%', lastStats.var95],
+    ['CVaR 95%', lastStats.cvar95],
+    ['Prob. Profit', lastStats.prob_profit],
+    ['Sharpe Ratio', lastStats.sharpe],
+    ['Sortino Ratio', lastStats.sortino],
+    ['Avg Max Drawdown', lastStats.avg_max_drawdown],
+    ['Skewness', lastStats.skewness],
+    ['Excess Kurtosis', lastStats.excess_kurtosis],
+    [''],
+    ['=== OUTCOME DISTRIBUTION ==='],
+    ['Crash (<−30%)', lastStats.dist_crash],
+    ['Bear (−10 to −30%)', lastStats.dist_bear],
+    ['Flat (±10%)', lastStats.dist_flat],
+    ['Bull (+10 to +50%)', lastStats.dist_bull],
+    ['Rocket (>+50%)', lastStats.dist_rocket],
+    [''],
+    ['=== FINAL PRICE SAMPLE (first 500) ==='],
+    ['Path #', 'Final Index'],
+    ...lastFinals.slice(0,500).map((v,i)=>[i+1, v.toFixed(2)])
+  ];
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  link.download=`nepse-montecarlo-data-${Date.now()}.csv`;
+  link.click();
+  showToast('✓ CSV exported');
+}
+
+function exportJSON(){
+  if(!lastStats){ showToast('Run simulation first!','var(--r)'); return; }
+  const payload={
+    meta:{version:'3.0',generated:new Date().toISOString(),tool:'NEPSE Monte Carlo Simulator'},
+    parameters:lastParams,
+    statistics:lastStats,
+    final_prices_sample: lastFinals.slice(0,1000).map(v=>parseFloat(v.toFixed(2)))
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  link.download=`nepse-montecarlo-${Date.now()}.json`;
+  link.click();
+  showToast('✓ JSON exported');
+}
+
+function exportReport(){
+  if(!lastStats){ showToast('Run simulation first!','var(--r)'); return; }
+  const p=lastParams, s=lastStats;
+  const html=`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>NEPSE Monte Carlo Report — ${new Date().toLocaleDateString()}</title>
+<style>
+body{font-family:'Courier New',monospace;background:#08090f;color:#e2e8f0;margin:0;padding:32px;}
+h1{font-size:22px;font-weight:800;letter-spacing:-1px;color:#e2e8f0;margin-bottom:4px;}
+.sub{color:#64748b;font-size:11px;margin-bottom:32px;}
+.section{margin-bottom:28px;}
+.section h2{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#4f8ef7;margin-bottom:14px;border-bottom:1px solid #1a2035;padding-bottom:6px;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{text-align:left;padding:7px 12px;color:#64748b;background:#0f1119;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;}
+td{padding:7px 12px;border-bottom:1px solid #1a2035;}
+tr:nth-child(even) td{background:#0f1119;}
+.up{color:#22c55e;}.down{color:#f43f5e;}.neu{color:#22d3ee;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.card{background:#0f1119;border:1px solid #1a2035;border-radius:8px;padding:16px;}
+.card-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#64748b;margin-bottom:6px;}
+.card-value{font-size:22px;font-weight:800;}
+.disc{margin-top:32px;padding:14px;border:1px solid rgba(251,191,36,.2);border-radius:8px;font-size:10px;color:rgba(251,191,36,.7);line-height:1.7;}
+</style>
+</head>
+<body>
+<h1>NEPSE Monte Carlo Report</h1>
+<div class="sub">Generated: ${new Date().toLocaleString()} | Model: ${p.model.toUpperCase()} | N=${p.N.toLocaleString()} paths | T=${p.T} days | Start: ${p.S0}</div>
+
+<div class="section">
+<h2>Key Results</h2>
+<div class="grid">
+  <div class="card"><div class="card-label">Median Outcome (P50)</div><div class="card-value ${parseFloat(s.median)>p.S0?'up':'down'}">${Math.round(parseFloat(s.median)).toLocaleString()}</div><div style="font-size:11px;color:#64748b;margin-top:4px;">${(((parseFloat(s.median)/p.S0)-1)*100).toFixed(1)}% from start</div></div>
+  <div class="card"><div class="card-label">Expected Mean</div><div class="card-value ${parseFloat(s.mean)>p.S0?'up':'down'}">${Math.round(parseFloat(s.mean)).toLocaleString()}</div><div style="font-size:11px;color:#64748b;margin-top:4px;">${(((parseFloat(s.mean)/p.S0)-1)*100).toFixed(1)}% from start</div></div>
+  <div class="card"><div class="card-label">Bull Case (P90)</div><div class="card-value up">${Math.round(parseFloat(s.p90)).toLocaleString()}</div><div style="font-size:11px;color:#64748b;margin-top:4px;">${(((parseFloat(s.p90)/p.S0)-1)*100).toFixed(1)}% from start</div></div>
+  <div class="card"><div class="card-label">Bear Case (P10)</div><div class="card-value down">${Math.round(parseFloat(s.p10)).toLocaleString()}</div><div style="font-size:11px;color:#64748b;margin-top:4px;">${(((parseFloat(s.p10)/p.S0)-1)*100).toFixed(1)}% from start</div></div>
+</div>
+</div>
+
+<div class="section">
+<h2>Risk Metrics</h2>
+<table>
+<thead><tr><th>Metric</th><th>Value</th><th>Interpretation</th></tr></thead>
+<tbody>
+<tr><td>VaR 95%</td><td class="down">−${Math.round(parseFloat(s.var95)).toLocaleString()} pts</td><td>Max expected loss with 95% confidence</td></tr>
+<tr><td>CVaR 95%</td><td class="down">−${Math.round(parseFloat(s.cvar95)).toLocaleString()} pts</td><td>Avg loss in worst 5% of scenarios</td></tr>
+<tr><td>Prob. Profit</td><td class="up">${s.prob_profit}</td><td>% of simulations ending above start</td></tr>
+<tr><td>Sharpe Ratio</td><td class="neu">${s.sharpe}</td><td>Risk-adjusted return vs rf=${(p.rfRate*100).toFixed(1)}%</td></tr>
+<tr><td>Sortino Ratio</td><td class="neu">${s.sortino}</td><td>Downside risk-adjusted return</td></tr>
+<tr><td>Avg Max Drawdown</td><td class="down">${s.avg_max_drawdown}</td><td>Average worst peak-to-trough in path</td></tr>
+<tr><td>Skewness</td><td>${s.skewness}</td><td>Distribution asymmetry (neg = left tail heavier)</td></tr>
+<tr><td>Excess Kurtosis</td><td>${s.excess_kurtosis}</td><td>Fat-tailedness vs normal (positive = fatter)</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section">
+<h2>Outcome Distribution</h2>
+<table>
+<thead><tr><th>Range</th><th>% of Simulations</th></tr></thead>
+<tbody>
+<tr><td class="down">Crash (&lt;−30%)</td><td>${s.dist_crash}</td></tr>
+<tr><td class="down">Bear (−10% to −30%)</td><td>${s.dist_bear}</td></tr>
+<tr><td class="neu">Flat (±10%)</td><td>${s.dist_flat}</td></tr>
+<tr><td class="up">Bull (+10% to +50%)</td><td>${s.dist_bull}</td></tr>
+<tr><td class="up">Rocket (&gt;+50%)</td><td>${s.dist_rocket}</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section">
+<h2>Simulation Parameters</h2>
+<table>
+<thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Model</td><td>${p.model.toUpperCase()}</td></tr>
+<tr><td>Starting Index</td><td>${p.S0}</td></tr>
+<tr><td>Simulations (N)</td><td>${p.N.toLocaleString()}</td></tr>
+<tr><td>Time Horizon</td><td>${p.T} trading days (~${(p.T/252).toFixed(1)} years)</td></tr>
+<tr><td>Annual Drift μ</td><td>${p.mu}%</td></tr>
+<tr><td>Annual Volatility σ</td><td>${p.sigma}%</td></tr>
+<tr><td>Student-t ν</td><td>${p.nu}</td></tr>
+<tr><td>Jump Intensity λ</td><td>${p.lambda}/yr</td></tr>
+<tr><td>Mean Jump Size</td><td>${p.jmu}%</td></tr>
+<tr><td>Jump Volatility</td><td>${p.jsig}%</td></tr>
+<tr><td>AR(1) ρ</td><td>${p.rho}</td></tr>
+<tr><td>Seasonality</td><td>${p.seas?'ON':'OFF'}</td></tr>
+<tr><td>GARCH κ</td><td>${p.kappa}</td></tr>
+<tr><td>Risk-Free Rate</td><td>${(p.rfRate*100).toFixed(1)}%</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="disc">⚠ This report is generated by NEPSE Monte Carlo v3. Research basis: EGARCH (NRB 2024), Jump calibration from 2022 NRB loan cap shock, Seasonality from Sharesansar 2024, AR(1) from Gaire ARIMA study. This is a risk modeling tool — NOT a buy/sell signal. All outputs are probabilistic, not predictions.</div>
+</body>
+</html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  link.download=`nepse-montecarlo-report-${Date.now()}.html`;
+  link.click();
+  showToast('✓ HTML Report exported');
+}
+
+// ── INIT ──
+window.addEventListener('load', ()=>{
+  buildSeasonalityChart();
+  setTimeout(runSim,500);
+});
+window.addEventListener('resize',()=>{
+  if(lastFinals.length) drawHist(lastFinals,lastS0);
+});
+</script>
+</body>
+</html>
